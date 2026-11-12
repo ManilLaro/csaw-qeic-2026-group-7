@@ -1,0 +1,31 @@
+{
+  "artifact_id": "challenge-2",
+  "title": "Stage 2 \u2014 Cross-Layer Execution Forensics",
+  "circuit": {
+    "physical_qubits": 32,
+    "active_qubits": 32,
+    "logical_depth": 144,
+    "transpiled_depth": 144,
+    "two_qubit_gates": 372,
+    "operations": {
+      "sx": 3072,
+      "rz": 768,
+      "rzz": 372
+    },
+    "target_operation_id": "op_00694",
+    "target_instruction_index": 694,
+    "target_logical_qubits": [
+      1,
+      4
+    ],
+    "target_physical_edge": [
+      1,
+      4
+    ],
+    "rounds": 24,
+    "seed": 20261112,
+    "intended_target_instruction_index": 2346
+  },
+  "execution_policy": "local_simulation_only",
+  "evidence_origin": "Synthetic frozen challenge evidence."
+}

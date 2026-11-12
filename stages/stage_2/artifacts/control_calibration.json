@@ -1,0 +1,21 @@
+{
+  "artifact_id": "cal-21",
+  "target_angle_rad": 1.5707963267948966,
+  "pulse_duration_ns": 15.625,
+  "nominal_rate_rad_per_ns": 0.10053096491487339,
+  "model_ref": "model-20",
+  "calibration_epoch": "K21",
+  "channel": "u14",
+  "physical_edge": [
+    1,
+    4
+  ],
+  "pulse": {
+    "shape": "rectangular",
+    "amplitude_scale": 1.0
+  },
+  "units": {
+    "time": "ns",
+    "rate": "rad/ns"
+  }
+}

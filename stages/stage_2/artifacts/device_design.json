@@ -1,0 +1,386 @@
+{
+  "artifact_id": "design-21",
+  "revision": "D21",
+  "geometry_fingerprint": "74a51d718cc33d6f422f4ffd3633011bf2890fb066bb200d4afa81e5f6f08c0e",
+  "fingerprint_method": "sha256 of synthetic geometry revision recipe; opaque registry identifier, not a digest of this JSON",
+  "units": {
+    "length": "um",
+    "coupling": "MHz"
+  },
+  "substrate": {
+    "material": "silicon",
+    "thickness_um": 500
+  },
+  "components": [
+    {
+      "id": "geom-Q0",
+      "type": "transmon_cross",
+      "x_um": 0,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q1",
+      "type": "transmon_cross",
+      "x_um": 500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q4",
+      "type": "transmon_cross",
+      "x_um": 1000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q2",
+      "type": "transmon_cross",
+      "x_um": 1500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q3",
+      "type": "transmon_cross",
+      "x_um": 2000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q5",
+      "type": "transmon_cross",
+      "x_um": 2500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q6",
+      "type": "transmon_cross",
+      "x_um": 3000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q7",
+      "type": "transmon_cross",
+      "x_um": 3500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q8",
+      "type": "transmon_cross",
+      "x_um": 4000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q9",
+      "type": "transmon_cross",
+      "x_um": 4500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q10",
+      "type": "transmon_cross",
+      "x_um": 5000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q11",
+      "type": "transmon_cross",
+      "x_um": 5500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q12",
+      "type": "transmon_cross",
+      "x_um": 6000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q13",
+      "type": "transmon_cross",
+      "x_um": 6500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q14",
+      "type": "transmon_cross",
+      "x_um": 7000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q15",
+      "type": "transmon_cross",
+      "x_um": 7500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q16",
+      "type": "transmon_cross",
+      "x_um": 8000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q17",
+      "type": "transmon_cross",
+      "x_um": 8500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q18",
+      "type": "transmon_cross",
+      "x_um": 9000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q19",
+      "type": "transmon_cross",
+      "x_um": 9500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q20",
+      "type": "transmon_cross",
+      "x_um": 10000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q21",
+      "type": "transmon_cross",
+      "x_um": 10500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q22",
+      "type": "transmon_cross",
+      "x_um": 11000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q23",
+      "type": "transmon_cross",
+      "x_um": 11500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q24",
+      "type": "transmon_cross",
+      "x_um": 12000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q25",
+      "type": "transmon_cross",
+      "x_um": 12500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q26",
+      "type": "transmon_cross",
+      "x_um": 13000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q27",
+      "type": "transmon_cross",
+      "x_um": 13500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q28",
+      "type": "transmon_cross",
+      "x_um": 14000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q29",
+      "type": "transmon_cross",
+      "x_um": 14500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q30",
+      "type": "transmon_cross",
+      "x_um": 15000,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    },
+    {
+      "id": "geom-Q31",
+      "type": "transmon_cross",
+      "x_um": 15500,
+      "y_um": 0,
+      "cross_length_um": 180,
+      "cross_width_um": 20,
+      "gap_um": 20,
+      "Lj_nH": 10.0,
+      "Cj_fF": 2.0
+    }
+  ],
+  "local_region": {
+    "qubits": [
+      1,
+      4
+    ],
+    "components": [
+      "geom-Q1",
+      "geom-Q4"
+    ],
+    "coupler": {
+      "id": "geom-C14",
+      "type": "capacitive",
+      "gap_um": 18,
+      "length_um": 200
+    },
+    "coupling_proxy_MHz": 18.0
+  },
+  "reconstruction_notes": "Synthetic reduced geometry recipe for Quantum Metal (formerly Qiskit Metal). Proxy values are supplied model inputs under the declared reduced assumptions."
+}

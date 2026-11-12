@@ -1,0 +1,24 @@
+{
+  "mappings": [
+    {
+      "effective_from": "2026-05-02T12:00:00Z",
+      "effective_until": "2026-08-14T09:00:00Z",
+      "logical_to_physical": {
+        "q0": 0,
+        "q1": 1,
+        "q2": 2
+      },
+      "mapping_id": "M1"
+    },
+    {
+      "change_ticket": "maint_2048",
+      "effective_from": "2026-08-14T09:00:00Z",
+      "logical_to_physical": {
+        "q0": 0,
+        "q1": 1,
+        "q2": 4
+      },
+      "mapping_id": "M2"
+    }
+  ]
+}

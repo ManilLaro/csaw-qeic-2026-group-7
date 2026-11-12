@@ -1,0 +1,31 @@
+{
+  "artifact_id": "tools-21",
+  "tools": {
+    "Qiskit": "circuit/QPY inspection and transpilation",
+    "Qiskit Aer": "global MPS structured simulation",
+    "qiskit-ibm-runtime": "RECOMMENDED: simulation/local testing and fake-backend metadata only; no live IBM services",
+    "Quantum Metal": "OPTIONAL BONUS B1: local device/geometry reconstruction; formerly Qiskit Metal",
+    "scqubits": "OPTIONAL BONUS B2: local reduced device-model reconstruction",
+    "QuTiP": "OPTIONAL BONUS B3: local control-dynamics validation (qutip-qip optional support)"
+  },
+  "network_required": false,
+  "dependencies": {
+    "core_required": [
+      "Python>=3.11",
+      "qiskit",
+      "qiskit-aer",
+      "numpy",
+      "scipy"
+    ],
+    "recommended": [
+      "qiskit-ibm-runtime"
+    ],
+    "optional_bonus": [
+      "quantum-metal",
+      "scqubits",
+      "qutip",
+      "qutip-qip"
+    ]
+  },
+  "core_input_policy": "Geometry metadata, coupling proxies, reduced-model assumption and characterization evidence are authoritative supplied inputs. Numerical reconstruction is optional bonus work, not required for core points or completion."
+}

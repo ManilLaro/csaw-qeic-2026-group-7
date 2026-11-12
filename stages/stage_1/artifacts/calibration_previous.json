@@ -1,0 +1,27 @@
+{
+  "calibration_epoch": "K19",
+  "device_epoch": "D19",
+  "profiles": [
+    {
+      "channel": "u3",
+      "endpoint_refs": [
+        "node_a",
+        "node_b"
+      ],
+      "profile_id": "cp_014"
+    },
+    {
+      "channel": "u12",
+      "endpoint_refs": [
+        "node_b",
+        "node_c"
+      ],
+      "profile_id": "cp_017"
+    }
+  ],
+  "quality_summary": {
+    "median_cx_error": 0.011,
+    "median_readout_error": 0.02
+  },
+  "valid_from": "2026-05-02T11:30:00Z"
+}

@@ -1,0 +1,57 @@
+{
+  "artifact_id": "char-21",
+  "origin": "deterministic analytic synthetic probes, not QuTiP output",
+  "physical_edge": [
+    1,
+    4
+  ],
+  "control_ref": "control-21",
+  "preparation": "|++>",
+  "pulse": "repeat ZZ calibration pulse n times",
+  "operator": "XI",
+  "operator_order": "left-to-right Q1,Q4",
+  "formula": "Expectation cos(n*omega*t), additive fixed perturbation; no fitted parameter is released.",
+  "absolute_tolerance": 0.004,
+  "probes": [
+    {
+      "repetitions": 1,
+      "expectation": -0.194090322,
+      "shots": 8192
+    },
+    {
+      "repetitions": 2,
+      "expectation": -0.924879533,
+      "shots": 8192
+    },
+    {
+      "repetitions": 3,
+      "expectation": 0.556570233,
+      "shots": 8192
+    },
+    {
+      "repetitions": 4,
+      "expectation": 0.706106781,
+      "shots": 8192
+    },
+    {
+      "repetitions": 5,
+      "expectation": -0.830469612,
+      "shots": 8192
+    },
+    {
+      "repetitions": 6,
+      "expectation": -0.383683432,
+      "shots": 8192
+    },
+    {
+      "repetitions": 7,
+      "expectation": 0.98178528,
+      "shots": 8192
+    },
+    {
+      "repetitions": 8,
+      "expectation": -0.001,
+      "shots": 8192
+    }
+  ]
+}

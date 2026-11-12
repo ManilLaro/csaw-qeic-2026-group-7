@@ -1,0 +1,22 @@
+{
+  "calibration_epoch": "K20",
+  "device_epoch": "D20",
+  "job_id": "job_20_8841",
+  "loaded_bindings": [
+    {
+      "binding_id": "bind_41",
+      "bundle_id": "cb_41f",
+      "schedule_operation_id": "ent_41"
+    },
+    {
+      "binding_id": "bind_73",
+      "bundle_id": "cb_73c",
+      "schedule_operation_id": "ent_73"
+    }
+  ],
+  "mapping_id": "M2",
+  "schedule_id": "sched_6f31",
+  "shots": 8192,
+  "status": "COMPLETED",
+  "submitted_at": "2026-08-14T10:15:22Z"
+}

@@ -1,0 +1,224 @@
+{
+  "release_id": "qei-2026-11-12",
+  "schema_version": "1.0",
+  "stages": [
+    "stage_1",
+    "stage_2"
+  ],
+  "max_points": {
+    "stage_1": 100,
+    "stage_2": 100
+  },
+  "verdicts": [
+    "VALID_EXECUTION",
+    "INTEGRITY_VIOLATION",
+    "INSUFFICIENT_EVIDENCE"
+  ],
+  "participant_editable_file": "solve.py",
+  "output_path": "outputs/result.json",
+  "rubrics": {
+    "stage_1": [
+      {
+        "id": "M1",
+        "category": "execution verdict",
+        "weight": 10
+      },
+      {
+        "id": "M2",
+        "category": "intended/compiled consistency",
+        "weight": 8
+      },
+      {
+        "id": "M3",
+        "category": "current mapping assessment",
+        "weight": 8
+      },
+      {
+        "id": "M4",
+        "category": "schedule/mapping consistency",
+        "weight": 8
+      },
+      {
+        "id": "M5",
+        "category": "control/calibration provenance",
+        "weight": 12
+      },
+      {
+        "id": "M6",
+        "category": "affected logical operation",
+        "weight": 8
+      },
+      {
+        "id": "M7",
+        "category": "expected physical resource",
+        "weight": 8
+      },
+      {
+        "id": "M8",
+        "category": "suspected realized physical resource",
+        "weight": 15
+      },
+      {
+        "id": "M9",
+        "category": "incidental-anomaly rejection",
+        "weight": 8
+      },
+      {
+        "id": "M10",
+        "category": "diagnostic evidence",
+        "weight": 5
+      },
+      {
+        "id": "M11",
+        "category": "proposed repair",
+        "weight": 5
+      },
+      {
+        "id": "M12",
+        "category": "repair validation",
+        "weight": 5
+      }
+    ],
+    "stage_2": [
+      {
+        "id": "M1",
+        "category": "execution verdict",
+        "weight": 8
+      },
+      {
+        "id": "M2",
+        "category": "circuit/compilation assessment",
+        "weight": 8
+      },
+      {
+        "id": "M3",
+        "category": "mapping/runtime physical-edge assessment",
+        "weight": 8
+      },
+      {
+        "id": "M4",
+        "category": "current device-design provenance",
+        "weight": 10
+      },
+      {
+        "id": "M5",
+        "category": "device-model provenance analysis",
+        "weight": 18
+      },
+      {
+        "id": "M6",
+        "category": "coupling/rate physical consequence",
+        "weight": 14
+      },
+      {
+        "id": "M7",
+        "category": "root-cause boundary localization",
+        "weight": 14
+      },
+      {
+        "id": "M8",
+        "category": "rejection of alternatives/distractors",
+        "weight": 8
+      },
+      {
+        "id": "M9",
+        "category": "proposed repair",
+        "weight": 6
+      },
+      {
+        "id": "M10",
+        "category": "repair-validation strategy",
+        "weight": 6
+      }
+    ]
+  },
+  "diagnostic_limits": {
+    "maximum_diagnostic_jobs": 20,
+    "maximum_total_diagnostic_shots": 10000,
+    "maximum_qubits_per_probe": 4,
+    "maximum_circuit_depth": 50
+  },
+  "required_files": [
+    "README.md",
+    "rules.json",
+    "requirements-core.txt",
+    "requirements-advanced.txt",
+    "environment_check.py",
+    "solve.py",
+    "evaluate.py",
+    "validate_submission.py",
+    "submission_schema.json",
+    "demo/README.md",
+    "demo/walkthrough.py",
+    "stages/stage_1/README.md",
+    "stages/stage_2/README.md"
+  ],
+  "validation_behavior": "structure, completeness, fingerprints and self-reported diagnostic budgets only; no correctness scoring",
+  "execution_policy": {
+    "mode": "local_simulation_only",
+    "hardware_allowed": false,
+    "network_required": false,
+    "credentials_required": false
+  },
+  "diagnostic_policy": "Static artifact inspection is unmetered. Optional local probe records are self-reported; limits apply per stage. The Stage-1 diagnostic client validates probe structure without executing it.",
+  "bonus": {
+    "stage": "stage_2",
+    "max_points": 30,
+    "separate_from_core": true,
+    "required_for_completion": false,
+    "rubric": [
+      {
+        "id": "B1",
+        "category": "Quantum Metal device/geometry reconstruction",
+        "weight": 10,
+        "directory": "extensions/device_reconstruction"
+      },
+      {
+        "id": "B2",
+        "category": "scqubits reduced device-model reconstruction",
+        "weight": 10,
+        "directory": "extensions/scqubits_model"
+      },
+      {
+        "id": "B3",
+        "category": "QuTiP local control-dynamics validation",
+        "weight": 10,
+        "directory": "extensions/qutip_validation"
+      }
+    ],
+    "submission_contents": [
+      "source code",
+      "assumptions",
+      "reproduction command",
+      "results",
+      "comparison against supplied challenge evidence"
+    ],
+    "submission_policy": "Submit extensions separately. Do not alter solve.py or outputs/result.json for bonus work. Bonus is organizer-reviewed independently of core scoring."
+  },
+  "dependencies": {
+    "core_required": [
+      "Python>=3.11",
+      "qiskit",
+      "qiskit-aer",
+      "numpy",
+      "scipy"
+    ],
+    "recommended": [
+      "qiskit-ibm-runtime"
+    ],
+    "optional_bonus": [
+      "quantum-metal",
+      "scqubits",
+      "qutip",
+      "qutip-qip"
+    ]
+  },
+  "score_totals": {
+    "stage_1": 100,
+    "stage_2": 100,
+    "core": 200,
+    "bonus": 30,
+    "maximum": 230,
+    "demo": 0
+  }
+}

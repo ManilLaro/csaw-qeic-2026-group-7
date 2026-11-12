@@ -1,0 +1,86 @@
+{
+  "device_epoch": "D20",
+  "mapping_id": "M2",
+  "operations": [
+    {
+      "duration": 0,
+      "gate": "rz",
+      "id": "prep_0a",
+      "physical_qubits": [
+        0
+      ],
+      "start": 0
+    },
+    {
+      "duration": 32,
+      "gate": "sx",
+      "id": "prep_0b",
+      "physical_qubits": [
+        0
+      ],
+      "start": 0
+    },
+    {
+      "duration": 0,
+      "gate": "rz",
+      "id": "prep_0c",
+      "physical_qubits": [
+        0
+      ],
+      "start": 32
+    },
+    {
+      "control_binding": "bind_41",
+      "duration": 176,
+      "gate": "cx",
+      "id": "ent_41",
+      "logical_operation": "cx_0_1",
+      "physical_qubits": [
+        0,
+        1
+      ],
+      "start": 40
+    },
+    {
+      "control_binding": "bind_73",
+      "duration": 192,
+      "gate": "cx",
+      "id": "ent_73",
+      "logical_operation": "cx_1_2",
+      "physical_qubits": [
+        1,
+        4
+      ],
+      "start": 224
+    },
+    {
+      "duration": 720,
+      "gate": "measure",
+      "id": "read_0",
+      "physical_qubits": [
+        0
+      ],
+      "start": 432
+    },
+    {
+      "duration": 720,
+      "gate": "measure",
+      "id": "read_1",
+      "physical_qubits": [
+        1
+      ],
+      "start": 432
+    },
+    {
+      "duration": 720,
+      "gate": "measure",
+      "id": "read_2",
+      "physical_qubits": [
+        4
+      ],
+      "start": 432
+    }
+  ],
+  "schedule_id": "sched_6f31",
+  "time_unit": "ns"
+}

@@ -1,0 +1,55 @@
+{
+  "calibration_epoch": "K20",
+  "device_epoch": "D20",
+  "profiles": [
+    {
+      "channel": "u7",
+      "endpoint_refs": [
+        "node_a",
+        "node_b"
+      ],
+      "profile_id": "cp_021"
+    },
+    {
+      "channel": "u15",
+      "endpoint_refs": [
+        "node_b",
+        "node_e"
+      ],
+      "profile_id": "cp_026"
+    }
+  ],
+  "qubit_metrics": [
+    {
+      "endpoint_ref": "node_a",
+      "readout_error": 0.02,
+      "relative_gate_quality": 0.99
+    },
+    {
+      "endpoint_ref": "node_b",
+      "readout_error": 0.02,
+      "relative_gate_quality": 0.99
+    },
+    {
+      "endpoint_ref": "node_c",
+      "readout_error": 0.02,
+      "relative_gate_quality": 0.98
+    },
+    {
+      "endpoint_ref": "node_d",
+      "readout_error": 0.02,
+      "relative_gate_quality": 0.86
+    },
+    {
+      "endpoint_ref": "node_e",
+      "readout_error": 0.02,
+      "relative_gate_quality": 0.98
+    },
+    {
+      "endpoint_ref": "node_f",
+      "readout_error": 0.08,
+      "relative_gate_quality": 0.97
+    }
+  ],
+  "valid_from": "2026-08-14T08:30:00Z"
+}

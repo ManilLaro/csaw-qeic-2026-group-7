@@ -1,0 +1,203 @@
+{
+  "artifact_id": "noise-21",
+  "assumptions": {
+    "local_probe_noise": "additive bounded perturbation <=0.004",
+    "no_crosstalk": true,
+    "unrelated_noise_excluded_from_local_probes": true
+  },
+  "qubits": [
+    {
+      "qubit": 0,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 1,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 2,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 3,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 4,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 5,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 6,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 7,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 8,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 9,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 10,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 11,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 12,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 13,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 14,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 15,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 16,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 17,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 18,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 19,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 20,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 21,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 22,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 23,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 24,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 25,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 26,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 27,
+      "T1_us": 25,
+      "T2_us": 20,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 28,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 29,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    },
+    {
+      "qubit": 30,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.18
+    },
+    {
+      "qubit": 31,
+      "T1_us": 100,
+      "T2_us": 80,
+      "readout_error": 0.01
+    }
+  ],
+  "scope": "Distractors on Q27 and Q30 are not applied to isolated Q1/Q4 characterization."
+}

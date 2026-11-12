@@ -1,0 +1,151 @@
+{
+  "artifact_id": "registry-21",
+  "revisions": [
+    {
+      "revision": "D20",
+      "geometry_fingerprint": "7fc9616fd892973d165200b4af36c41ec51165817974d8848bfb46514c85c878",
+      "timestamp": "2026-07-01T08:00:00Z"
+    },
+    {
+      "revision": "D21",
+      "geometry_fingerprint": "74a51d718cc33d6f422f4ffd3633011bf2890fb066bb200d4afa81e5f6f08c0e",
+      "timestamp": "2026-08-15T08:00:00Z"
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "backend-21",
+      "path": "backend_snapshot.json",
+      "sha256": "6d191408a9903c894f31228262b61e1f3f6ec439becf2adafb8015c561c3b549",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "challenge-2",
+      "path": "challenge.json",
+      "sha256": "871439fb233ba3344b3047f2b73064b618ff329bd71ae569935f51a987294205",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "char-21",
+      "path": "characterization.json",
+      "sha256": "134f0fb0e033999fd5bb135c0c3988efca57dff8a1cbe283e827bb2411dda9a7",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "cal-21",
+      "path": "control_calibration.json",
+      "sha256": "1852dd4426afebdba3927d6ec5d8637993cc70ae93267b0894d9bb70b7154414",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "control-21",
+      "path": "control_manifest.json",
+      "sha256": "9453b11d5e7e81c8be1e33123d16f99d46c576dddf154730777041f9a5d13f6f",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "design-21",
+      "path": "device_design.json",
+      "sha256": "e75d62450d060899f0cecd80f2449ee5ce84ed35c3cd228d30c4623e71125693",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "model-20",
+      "path": "device_model.json",
+      "sha256": "0058f700270901cf5129258c82b33f65d298f75d32e75ec404e8d60fc3971c90",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "local-14",
+      "path": "local_subsystem.json",
+      "sha256": "d379e9a9b03401e130efe91bf7829bdc05009931804a1f3489fcfb3d945bb53a",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "map-21",
+      "path": "mapping.json",
+      "sha256": "9dcd7859ae72672b5b30acc5effea00c8516705565f7cf51c29498a035a17943",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "noise-21",
+      "path": "noise_snapshot.json",
+      "sha256": "454c3c287b6a9b4658f3fc7ee376a319785c38d128a64c2b6dfa8ac527fd1099",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "observables-21",
+      "path": "observable_spec.json",
+      "sha256": "6f5a5182a949570cd7cfd263d2e9a8faa805e5942da93054cf32f5ccc35cb4c3",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "schedule-21",
+      "path": "schedule.json",
+      "sha256": "c026e1ec0538c35d0cf45733819fe2f88095f281a86b915408bf5c1cdd9a567f",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "runtime-21",
+      "path": "simulated_runtime_snapshot.json",
+      "sha256": "d896038c91c785d665ce16868a4aa50d4bed132778c750fe310b11c9573f44a4",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "sim-config",
+      "path": "simulation_config.json",
+      "sha256": "8c780883ee7112457a8852ee6b60f441a31adaaf1341441fd53ff39501dce93e",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "tools-21",
+      "path": "tool_requirements.json",
+      "sha256": "bd8e13aaeb0813ade65c82368030a88e68766a661145cea09bb4141afc8aa0ce",
+      "timestamp": "2026-08-15T12:00:00Z"
+    },
+    {
+      "artifact_id": "verification-21",
+      "path": "verification_protocol.json",
+      "sha256": "4718b0a8af6f3aee676e40410b48260aadef5f6d30595eebce5380a362963690",
+      "timestamp": "2026-08-15T12:00:00Z"
+    }
+  ],
+  "external_ids": [
+    "control-base"
+  ],
+  "geometry_ids": [
+    "geom-Q0",
+    "geom-Q1",
+    "geom-Q4",
+    "geom-Q2",
+    "geom-Q3",
+    "geom-Q5",
+    "geom-Q6",
+    "geom-Q7",
+    "geom-Q8",
+    "geom-Q9",
+    "geom-Q10",
+    "geom-Q11",
+    "geom-Q12",
+    "geom-Q13",
+    "geom-Q14",
+    "geom-Q15",
+    "geom-Q16",
+    "geom-Q17",
+    "geom-Q18",
+    "geom-Q19",
+    "geom-Q20",
+    "geom-Q21",
+    "geom-Q22",
+    "geom-Q23",
+    "geom-Q24",
+    "geom-Q25",
+    "geom-Q26",
+    "geom-Q27",
+    "geom-Q28",
+    "geom-Q29",
+    "geom-Q30",
+    "geom-Q31",
+    "geom-C14"
+  ]
+}

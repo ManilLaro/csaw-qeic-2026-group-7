@@ -1,0 +1,9 @@
+# Optional combined environment for recommended integration and bonus work.
+-r requirements-core.txt
+# Local/fake-backend workflows only:
+qiskit-ibm-runtime
+# Optional physics bonus:
+quantum-metal
+scqubits
+qutip>=5,<6
+qutip-qip>=0.4,<1

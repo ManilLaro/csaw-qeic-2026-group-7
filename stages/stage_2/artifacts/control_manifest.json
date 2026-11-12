@@ -1,0 +1,13 @@
+{
+  "artifact_id": "control-21",
+  "target_operation_id": "op_00694",
+  "target_physical_edge": [
+    1,
+    4
+  ],
+  "channel": "u14",
+  "calibration_ref": "cal-21",
+  "schedule_ref": "schedule-21",
+  "mapping_ref": "map-21",
+  "calibration_epoch": "K21"
+}

@@ -1,0 +1,32 @@
+{
+  "artifact_id": "model-20",
+  "source_geometry_fingerprint": "7fc9616fd892973d165200b4af36c41ec51165817974d8848bfb46514c85c878",
+  "created_at": "2026-07-01T09:00:00Z",
+  "model_kind": "two weakly anharmonic transmons; reduced exchange proxy",
+  "qubits": [
+    1,
+    4
+  ],
+  "parameters": {
+    "EJ_GHz": [
+      20.1,
+      19.8
+    ],
+    "EC_GHz": [
+      0.25,
+      0.26
+    ],
+    "ng": [
+      0.0,
+      0.0
+    ],
+    "ncut": 20,
+    "truncated_dim": 3
+  },
+  "coupling_proxy_MHz": 16.0,
+  "units": {
+    "energy": "GHz",
+    "coupling": "MHz"
+  },
+  "reduced_assumption": "Effective entangling angular rate is 2*pi*g_MHz/1000 rad/ns. Proxy g includes drive scaling. This is a supplied effective model, not a claimed ab initio transmon extraction. U(theta)=exp(-i theta ZZ/2); SX basis changes realize YY pair blocks."
+}

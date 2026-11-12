@@ -1,0 +1,21 @@
+{
+  "artifact_id": "local-14",
+  "qubits": [
+    1,
+    4
+  ],
+  "geometry_refs": [
+    "geom-Q1",
+    "geom-Q4",
+    "geom-C14"
+  ],
+  "model_ref": "model-20",
+  "design_ref": "design-21",
+  "control_ref": "control-21",
+  "coupling_refs": [
+    "design-21",
+    "model-20"
+  ],
+  "max_qubits": 4,
+  "dynamics_recipe": "Model H/hbar=omega ZZ/2 during rectangular pulse; conjugate by the circuit SX basis changes. Local probes use initial |++>, ZZ pulse, measure XI. No full-device Hamiltonian required."
+}

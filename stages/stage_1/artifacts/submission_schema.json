@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "affected_logical_operations": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "artifact_evidence": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "diagnostic_evidence": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "expected_physical_resources": {
+      "type": "array"
+    },
+    "incidental_anomalies": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "layer_assessments": {
+      "properties": {
+        "algorithm": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "compiler": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "control": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mapping": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "measurement": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scheduling": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "proposed_repair": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "repair_validation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "root_cause": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "suspected_fault_type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "suspected_realized_resources": {
+      "type": "array"
+    },
+    "verdict": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "title": "HARD-001 forensic submission",
+  "type": "object"
+}

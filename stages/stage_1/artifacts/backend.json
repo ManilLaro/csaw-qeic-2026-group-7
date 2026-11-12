@@ -1,0 +1,84 @@
+{
+  "backend_seed": 7301,
+  "backend_type": "GenericBackendV2",
+  "basis_gates": [
+    "id",
+    "rz",
+    "sx",
+    "x",
+    "cx",
+    "measure"
+  ],
+  "coupling_map": [
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      4
+    ]
+  ],
+  "device_epoch": "D20",
+  "endpoint_registry": {
+    "node_a": {
+      "physical_index": 0
+    },
+    "node_b": {
+      "physical_index": 1
+    },
+    "node_c": {
+      "physical_index": 2
+    },
+    "node_d": {
+      "physical_index": 3
+    },
+    "node_e": {
+      "physical_index": 4
+    },
+    "node_f": {
+      "physical_index": 5
+    }
+  },
+  "num_qubits": 6
+}

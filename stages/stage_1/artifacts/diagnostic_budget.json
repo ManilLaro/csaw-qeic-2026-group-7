@@ -1,0 +1,14 @@
+{
+  "allowed_operations": [
+    "id",
+    "rz",
+    "sx",
+    "x",
+    "cx",
+    "measure"
+  ],
+  "maximum_circuit_depth": 50,
+  "maximum_diagnostic_jobs": 20,
+  "maximum_qubits_per_probe": 4,
+  "maximum_total_diagnostic_shots": 10000
+}

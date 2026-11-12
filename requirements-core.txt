@@ -1,0 +1,5 @@
+# Required core environment (Python >=3.11). No physics reconstruction packages.
+qiskit>=2.5,<3
+qiskit-aer>=0.17,<1
+numpy>=1.26,<3
+scipy>=1.11,<2

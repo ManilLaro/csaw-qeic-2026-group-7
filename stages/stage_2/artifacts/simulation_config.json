@@ -1,0 +1,19 @@
+{
+  "artifact_id": "sim-config",
+  "execution_mode": "local_simulation_only",
+  "hardware_execution_allowed": false,
+  "active_qubits": 32,
+  "recommended_global_simulator": "qiskit_aer",
+  "recommended_method": "matrix_product_state",
+  "dense_statevector_required": false,
+  "full_probability_vector_released": false,
+  "local_physics_subsystem_max_qubits": 4,
+  "seed_simulator": 20261112,
+  "shots": 8192,
+  "truncation_threshold": 1e-10,
+  "bond_dimension_limit": 256,
+  "convergence_policy": "Repeat at bond limits 128, 256, 512 and reduced thresholds; report observable deltas and discarded weight. Do not accept unconverged results.",
+  "measurement_policy": "Selected observables only; no full distribution. Use save_expectation_value for global parity, never request statevector.",
+  "realized_model_policy": "Construct a supported effective local operation from the supplied characterization; document assumptions.",
+  "verification_protocol_ref": "verification-21"
+}

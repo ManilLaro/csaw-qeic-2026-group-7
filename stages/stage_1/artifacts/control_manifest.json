@@ -1,0 +1,22 @@
+{
+  "bindings": [
+    {
+      "binding_id": "bind_41",
+      "bundle_id": "cb_41f",
+      "calibration_epoch": "K20",
+      "calibration_profile_id": "cp_021",
+      "channel": "u7",
+      "created_at": "2026-08-14T08:42:11Z"
+    },
+    {
+      "binding_id": "bind_73",
+      "bundle_id": "cb_73c",
+      "calibration_epoch": "K19",
+      "calibration_profile_id": "cp_017",
+      "channel": "u12",
+      "created_at": "2026-05-02T11:44:08Z"
+    }
+  ],
+  "device_epoch": "D20",
+  "manifest_id": "cm_20_0814"
+}

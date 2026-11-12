@@ -1,0 +1,10 @@
+{
+  "device_epoch": "D20",
+  "effective_at": "2026-08-14T09:00:00Z",
+  "logical_to_physical": {
+    "q0": 0,
+    "q1": 1,
+    "q2": 4
+  },
+  "mapping_id": "M2"
+}
