@@ -867,6 +867,30 @@ def solve_stage2(stage_dir):
     other_models = [x for x in reg.get('artifacts', []) if x.get('path') == 'device_model.json'
                     and x.get('artifact_id') != mod.get('artifact_id')]
     reg_times = sorted({x.get('timestamp') for x in reg.get('artifacts', [])})
+    # junction cross-check: EJ = (Phi0/2pi)^2 / Lj  (CODATA SI), design Lj vs model EJ
+    phi0_red, h_pl = 2.067833848e-15 / (2 * math.pi), 6.62607015e-34
+    mq = mod.get('qubits', [])
+    ej_model = mod.get('parameters', {}).get('EJ_GHz', [])
+    lj_des = [comps.get(f'geom-Q{q}', {}).get('Lj_nH') for q in mq]
+    junction_txt, junction_mismatch = '', False
+    if lj_des and None not in lj_des and len(ej_model) == len(mq):
+        ej_des = [phi0_red ** 2 / (lj * 1e-9) / h_pl / 1e9 for lj in lj_des]
+        lj_impl = [phi0_red ** 2 / (ej * 1e9 * h_pl) * 1e9 for ej in ej_model]
+        rel = [abs(m / d - 1) for m, d in zip(ej_model, ej_des)]
+        junction_mismatch = max(rel) > 0.05
+        for q, a, b_, c in zip(mq, ej_des, ej_model, lj_impl):
+            params[f'ej_from_design_lj_Q{q}_GHz'] = a
+            params[f'ej_model_Q{q}_GHz'] = b_
+            params[f'lj_implied_by_model_Q{q}_nH'] = c
+        params['ej_model_vs_design_max_relative_mismatch_ratio'] = max(rel)
+        junction_txt = (
+            f'Independent junction cross-check: {cur_rev} design junctions Lj = {lj_des} nH give EJ = '
+            f'(Phi0/2pi)^2/Lj = {[round(x, 2) for x in ej_des]} GHz, but {mod.get("artifact_id")} uses EJ = {ej_model} GHz '
+            f'(implying Lj = {[round(x, 2) for x in lj_impl]} nH, asymmetric where the design is symmetric); max relative '
+            f'mismatch {max(rel):.1%}. ' +
+            ('So the model\'s transmon parameters, not only its coupling, are inconsistent with the current geometry, '
+             f'further evidence it was not derived from {cur_rev} (the {model_rev} geometry is not supplied, so a match '
+             f'to {model_rev} cannot be confirmed). ' if junction_mismatch else 'Junction parameters are consistent. '))
     layers['device_model'] = (
         (f'STALE PROVENANCE (PRIMARY FAULT). {mod.get("artifact_id")} ({mod.get("model_kind")}) declares '
          f'source_geometry_fingerprint {str(mod.get("source_geometry_fingerprint"))[:12]}..., which the registry assigns '
@@ -881,7 +905,7 @@ def solve_stage2(stage_dir):
          f'model_ref {loc.get("model_ref")}): two coupling sources from different geometry revisions ({g_design} vs '
          f'{g_model} MHz) for one subsystem. Its transmon parameters (EJ {mod.get("parameters", {}).get("EJ_GHz")} GHz, '
          f'EC {mod.get("parameters", {}).get("EC_GHz")} GHz) do not enter the reduced entangling rate; only the '
-         'coupling proxy does.') if model_stale else f'CONSISTENT: model derived from {model_rev}.')
+         'coupling proxy does. ' + junction_txt) if model_stale else f'CONSISTENT: model derived from {model_rev}.')
     if model_stale:
         faults.append('device_model')
     ev['model'] += [
@@ -895,6 +919,11 @@ def solve_stage2(stage_dir):
         _ev('local_subsystem.json', f'coupling_refs {loc.get("coupling_refs")}: design_ref {loc.get("design_ref")} and '
             f'model_ref {loc.get("model_ref")} from different revisions for qubits {loc.get("qubits")}',
             'coupling_refs; design_ref; model_ref')]
+    if junction_txt:
+        ev['model'].append(_ev('device_model.json', junction_txt.strip(), 'parameters.EJ_GHz'))
+        ev['design'].append(_ev('device_design.json', f'junction Lj_nH {lj_des} for geom-Q{mq[0]}/geom-Q{mq[-1]}'
+                                + (f' (identical across all {len(comps)} components)' if len({c.get('Lj_nH') for c in comps.values()}) == 1
+                                   else ' (varies across components)'), f'components[geom-Q{mq[0]}].Lj_nH'))
 
     # ---------------- control calibration ----------------
     t = cal.get('pulse_duration_ns')
@@ -1225,7 +1254,9 @@ def solve_stage2(stage_dir):
     layers['root_cause_boundary'] = (
         f'PRIMARY: device design {des.get("artifact_id")} ({cur_rev}) -> device model {mod.get("artifact_id")} '
         f'({model_rev}): the model was never regenerated after {cur_rev} (fingerprint mismatch, g {g_model} vs {g_design} '
-        f'MHz). PROPAGATION: {mod.get("artifact_id")} -> {cal.get("artifact_id")} ({cal.get("calibration_epoch")}): the '
+        f'MHz' + (f'; junction EJ {ej_model} GHz vs {cur_rev} Lj-derived '
+                  f'{round(params.get(f"ej_from_design_lj_Q{mq[0]}_GHz", 0), 2)} GHz' if junction_mismatch else '') +
+        f'). PROPAGATION: {mod.get("artifact_id")} -> {cal.get("artifact_id")} ({cal.get("calibration_epoch")}): the '
         'calibration correctly derives its pulse from its declared model_ref but has no geometry-fingerprint check '
         f'against the {cur_rev} runtime. DOWNSTREAM (clean): compiler, mapping, schedule, runtime executed as configured.')
     res.update(

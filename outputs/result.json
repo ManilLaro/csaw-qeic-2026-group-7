@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "challenge_release_id": "qei-2026-11-12",
-  "participant_solution_sha256": "c08e73fdd2c7eae21fe9bf9a16235efbb46f52c3b970a5c2ca5a5cc31bd0d85b",
+  "participant_solution_sha256": "586b215ba06a9c78708bfaa32d50c5f967b2cc69d09add95f0a8e1b252ce077d",
   "public_artifact_sha256": {
     ".gitattributes": "a0be2f89acce02f1efe534b4f4fe3b1cd3a7ed41964b2f1619f26c36f3fc72db",
     ".gitignore": "e0fb62e9fbee8f95097ee50d4f43c85d5d316fd69eb66d3b1e1e822ed2ca1f5c",
@@ -270,7 +270,7 @@
         "runtime": "CONSISTENT. Runtime synthetic-job-0021 used device revision D21, geometry fingerprint 74a51d718cc3..., calibration epoch K21, mapping map-21 and schedule schedule-21, matching the backend snapshot and the current device design. The runtime executed the stack it was given.",
         "scheduling": "CONSISTENT. All 4212 schedule entries match the compiled instruction at their instruction_index (0 mismatches). Exactly 1 entry uses control-21: op_00694 (index 694, rzz on [1, 4], start 1580.0 ns), whose duration 15.625 ns equals the calibrated pulse 15.625 ns. Scheduling faithfully applied the mis-derived calibration.",
         "device_design": "CURRENT AND CONSISTENT. design-21 is revision D21, fingerprint 74a51d718cc3..., which the provenance registry assigns to D21 (2026-08-15T08:00:00Z) and which equals the runtime/backend fingerprint. Local region [1, 4] (components ['geom-Q1', 'geom-Q4'], coupler geom-C14 capacitive, gap 18 um, length 200 um) specifies coupling_proxy_MHz = 18.0. Component x-positions order the qubits 0-1-4-2-3-5-..., matching the backend chain, so [1, 4] are physically adjacent.",
-        "device_model": "STALE PROVENANCE (PRIMARY FAULT). model-20 (two weakly anharmonic transmons; reduced exchange proxy) declares source_geometry_fingerprint 7fc9616fd892..., which the registry assigns to D20 (2026-07-01T08:00:00Z), not the current D21. It was created 2026-07-01T09:00:00Z, before D21 existed (2026-08-15T08:00:00Z), and carries coupling_proxy_MHz = 16.0 vs 18.0 MHz in the D21 design for the same edge [1, 4]. The registry contains no other device model, so no D21-derived model exists. model-20 is listed in the registry at 2026-08-15T12:00:00Z (all registry artifact timestamps: ['2026-08-15T12:00:00Z']); a registry timestamp is not a regeneration and does not change its source geometry. local-14 cites coupling_refs ['design-21', 'model-20'] (design_ref design-21, model_ref model-20): two coupling sources from different geometry revisions (18.0 vs 16.0 MHz) for one subsystem. Its transmon parameters (EJ [20.1, 19.8] GHz, EC [0.25, 0.26] GHz) do not enter the reduced entangling rate; only the coupling proxy does.",
+        "device_model": "STALE PROVENANCE (PRIMARY FAULT). model-20 (two weakly anharmonic transmons; reduced exchange proxy) declares source_geometry_fingerprint 7fc9616fd892..., which the registry assigns to D20 (2026-07-01T08:00:00Z), not the current D21. It was created 2026-07-01T09:00:00Z, before D21 existed (2026-08-15T08:00:00Z), and carries coupling_proxy_MHz = 16.0 vs 18.0 MHz in the D21 design for the same edge [1, 4]. The registry contains no other device model, so no D21-derived model exists. model-20 is listed in the registry at 2026-08-15T12:00:00Z (all registry artifact timestamps: ['2026-08-15T12:00:00Z']); a registry timestamp is not a regeneration and does not change its source geometry. local-14 cites coupling_refs ['design-21', 'model-20'] (design_ref design-21, model_ref model-20): two coupling sources from different geometry revisions (18.0 vs 16.0 MHz) for one subsystem. Its transmon parameters (EJ [20.1, 19.8] GHz, EC [0.25, 0.26] GHz) do not enter the reduced entangling rate; only the coupling proxy does. Independent junction cross-check: D21 design junctions Lj = [10.0, 10.0] nH give EJ = (Phi0/2pi)^2/Lj = [16.35, 16.35] GHz, but model-20 uses EJ = [20.1, 19.8] GHz (implying Lj = [8.13, 8.26] nH, asymmetric where the design is symmetric); max relative mismatch 23.0%. So the model's transmon parameters, not only its coupling, are inconsistent with the current geometry, further evidence it was not derived from D21 (the D20 geometry is not supplied, so a match to D20 cannot be confirmed). ",
         "control": "PROPAGATES THE STALE MODEL. cal-21 (epoch K21, channel u14, edge [1, 4]) has model_ref model-20; its nominal_rate 0.10053096491487339 rad/ns = 2*pi*16.0/1000 (the D20 coupling) and pulse_duration 15.625 ns = target_angle 1.5707963267948966 / nominal_rate (exact). Given its declared input the calibration arithmetic is correct; its defect is that it carries no source-geometry fingerprint and was not checked against the D21 runtime, so it inherited the stale rate. Channel/edge binding is consistent: manifest control-21, calibration and verification metadata all use u14 on [1, 4]; characterization control_ref control-21 shows the probes used this same pulse.",
         "algorithm": "local pair transport: 24 rounds of RZ and SX-conjugated RZZ on 32 qubits (372 two-qubit gates); intended target RZZ(pi/2) on logical [1, 4]. No algorithm-layer issue.",
         "provenance_registry": "Registry registry-21: revisions D20@2026-07-01T08:00:00Z, D21@2026-08-15T08:00:00Z. Design and runtime resolve to D21; model-20 resolves to D20. external_ids ['control-base'] are unregistered.",
@@ -278,7 +278,7 @@
         "verification": "<X1> observed -0.19319937253274094 matches the realized prediction -0.193199, not the intended 0.000000 (tolerance 0.004); inverted coupling 18.0000 MHz.",
         "noise": "NOT CAUSAL. Off-edge T1/readout outliers only; target-edge decoherence over the probes is negligible (T2 damping 0.99844).",
         "alternatives": "REJECTED: Index difference intended 2346 vs compiled 694 for op_00694: commuting reorder; operation, qubits and angle identical.; compiler: DAG-identical, requests exactly the intended angle; mapping: identity layout, supported edge [1, 4]; scheduling: matches compiled circuit; target duration equals calibration; wrong control channel/edge: u14 bound to [1, 4] in manifest, calibration, characterization and verification metadata; runtime/backend: D21/K21 and fingerprint consistent with design; T1/T2 decoherence: the longest probe (8 pulses = 125.0 ns) gives T2 damping 0.99844 on [1, 4], far too small for the observed shifts; decay would shrink |<XI>| with n, but |<XI>| reaches 0.982 at n=7, and the sign pattern is a coherent rotation; readout error: off-edge outliers only; verification uses no readout channel; crosstalk: noise assumptions no_crosstalk=true; characterization is isolated; qubit-parameter drift: all 32 design components share identical cross geometry and Lj/Cj; the reduced rate depends only on the coupling proxy.",
-        "root_cause_boundary": "PRIMARY: device design design-21 (D21) -> device model model-20 (D20): the model was never regenerated after D21 (fingerprint mismatch, g 16.0 vs 18.0 MHz). PROPAGATION: model-20 -> cal-21 (K21): the calibration correctly derives its pulse from its declared model_ref but has no geometry-fingerprint check against the D21 runtime. DOWNSTREAM (clean): compiler, mapping, schedule, runtime executed as configured."
+        "root_cause_boundary": "PRIMARY: device design design-21 (D21) -> device model model-20 (D20): the model was never regenerated after D21 (fingerprint mismatch, g 16.0 vs 18.0 MHz; junction EJ [20.1, 19.8] GHz vs D21 Lj-derived 16.35 GHz). PROPAGATION: model-20 -> cal-21 (K21): the calibration correctly derives its pulse from its declared model_ref but has no geometry-fingerprint check against the D21 runtime. DOWNSTREAM (clean): compiler, mapping, schedule, runtime executed as configured."
       },
       "suspected_fault_type": "STALE_DEVICE_MODEL_PROVENANCE -> COUPLING_MISCALIBRATION (coherent RZZ over-rotation)",
       "affected_logical_operations": [
@@ -405,6 +405,13 @@
         }
       ],
       "estimated_parameters": {
+        "ej_from_design_lj_Q1_GHz": 16.346151273375042,
+        "ej_model_Q1_GHz": 20.1,
+        "lj_implied_by_model_Q1_nH": 8.132413568843306,
+        "ej_from_design_lj_Q4_GHz": 16.346151273375042,
+        "ej_model_Q4_GHz": 19.8,
+        "lj_implied_by_model_Q4_nH": 8.255631956250024,
+        "ej_model_vs_design_max_relative_mismatch_ratio": 0.2296472523620472,
         "coupling_fit_minimax_MHz": 18.0,
         "coupling_fit_window_low_MHz": 17.997,
         "coupling_fit_window_high_MHz": 18.005,
@@ -465,7 +472,7 @@
         "verification_circuit.qpy uses ['h'], outside the backend basis: it is an analytic logical companion record, not a transpiled job, and its identity is used analytically.",
         "characterization n=[8] expectation [-0.001] is ~0 exactly as predicted (cos(n*9*pi/16) = 0); within tolerance 0.004."
       ],
-      "root_cause": "OBSERVATIONS: compiler, mapping, schedule and runtime faithfully request RZZ(pi/2) on edge (1,4) over channel u14. Current design design-21 (D21) gives g = 18.0 MHz for coupler geom-C14; device model model-20 was built from D20 geometry (fingerprint 7fc9616fd892...) with g = 16.0 MHz and was never regenerated for D21. Calibration cal-21 took its rate from it (0.100531 rad/ns) and chose 15.625 ns. PHYSICAL CONSEQUENCE: with the supplied reduced assumption omega = 2*pi*g/1000 rad/ns, the true rate is 0.113097 rad/ns (+0.012566 rad/ns, coupling error 2.0 MHz; the model under-estimates g by 11.1%), so theta = 1.767146 rad (9*pi/16), a 12.5% (+0.1963 rad, 11.25 deg) coherent over-rotation; gate process fidelity vs intended 0.99039. Characterization independently gives g = 18.0 MHz (window 17.997-18.005 MHz at tolerance 0.004; max residual 0.001; residuals alternate in sign with n, i.e. the declared fixed additive perturbation, not a fit bias); the verification correlator inverts to 18.000 MHz; MPS shows local workload observables on (1,4) shift while global parity cannot. BOUNDARY: PRIMARY: device design design-21 (D21) -> device model model-20 (D20): the model was never regenerated after D21 (fingerprint mismatch, g 16.0 vs 18.0 MHz). PROPAGATION: model-20 -> cal-21 (K21): the calibration correctly derives its pulse from its declared model_ref but has no geometry-fingerprint check against the D21 runtime. DOWNSTREAM (clean): compiler, mapping, schedule, runtime executed as configured. SCOPE: only operations bound to control-21 are evidenced as affected; control-base provenance is not supplied.",
+      "root_cause": "OBSERVATIONS: compiler, mapping, schedule and runtime faithfully request RZZ(pi/2) on edge (1,4) over channel u14. Current design design-21 (D21) gives g = 18.0 MHz for coupler geom-C14; device model model-20 was built from D20 geometry (fingerprint 7fc9616fd892...) with g = 16.0 MHz and was never regenerated for D21. Calibration cal-21 took its rate from it (0.100531 rad/ns) and chose 15.625 ns. PHYSICAL CONSEQUENCE: with the supplied reduced assumption omega = 2*pi*g/1000 rad/ns, the true rate is 0.113097 rad/ns (+0.012566 rad/ns, coupling error 2.0 MHz; the model under-estimates g by 11.1%), so theta = 1.767146 rad (9*pi/16), a 12.5% (+0.1963 rad, 11.25 deg) coherent over-rotation; gate process fidelity vs intended 0.99039. Characterization independently gives g = 18.0 MHz (window 17.997-18.005 MHz at tolerance 0.004; max residual 0.001; residuals alternate in sign with n, i.e. the declared fixed additive perturbation, not a fit bias); the verification correlator inverts to 18.000 MHz; MPS shows local workload observables on (1,4) shift while global parity cannot. BOUNDARY: PRIMARY: device design design-21 (D21) -> device model model-20 (D20): the model was never regenerated after D21 (fingerprint mismatch, g 16.0 vs 18.0 MHz; junction EJ [20.1, 19.8] GHz vs D21 Lj-derived 16.35 GHz). PROPAGATION: model-20 -> cal-21 (K21): the calibration correctly derives its pulse from its declared model_ref but has no geometry-fingerprint check against the D21 runtime. DOWNSTREAM (clean): compiler, mapping, schedule, runtime executed as configured. SCOPE: only operations bound to control-21 are evidenced as affected; control-base provenance is not supplied.",
       "proposed_repair": "(1) Regenerate the reduced device model from the D21 geometry (source_geometry_fingerprint 74a51d718cc33d6f422f4ffd3633011bf2890fb066bb200d4afa81e5f6f08c0e), giving coupling_proxy_MHz = 18.0 for (1,4); register it as a new artifact and repoint local-14 to it. (2) Issue a new calibration epoch (rather than editing cal-21) for channel u14: nominal_rate 0.113097 rad/ns and pulse_duration 13.8889 ns, or keep 15.625 ns with amplitude_scale 0.8889 (valid only if rate is linear in drive; the model states \"Proxy g includes drive scaling\", so re-verify). (3) Provenance gate: a calibration may be used only if its model's source_geometry_fingerprint equals the runtime/backend geometry_fingerprint; a new device revision invalidates models and calibrations derived from earlier revisions. (4) Audit control-base for the same dependency.",
       "repair_validation": "(1) Provenance: model.source_geometry_fingerprint == design == runtime fingerprint (D21). (2) Re-run the 8 characterization probes (|++>, n pulses, measure XI): expect [0.0, -1.0, -0.0, 1.0, 0.0, -1.0, -0.0, 1.0] within 0.004 (currently [-0.194, -0.925, 0.557, 0.706, -0.83, -0.384, 0.982, -0.001]), and a refit giving omega*t = pi/2. (3) Re-run the verification companion: expect <X1> = 0.0000 +/- 0.004 (currently -0.19319937253274094). (4) Re-simulate the workload with Aer MPS at bond 128/256/512 and confirm local observables on (1,4) return to intended values (<Z1> 0.2070, currently 0.0785); global parity is not a sufficient check. (5) Keep probes as a regression test on every device revision; odd-n repetitions amplify residual rate error.",
       "confidence": 0.95,
@@ -496,6 +503,11 @@
           "artifact": "provenance_registry.json",
           "claim": "revisions: D20 -> 7fc9616fd892... at 2026-07-01T08:00:00Z, D21 -> 74a51d718cc3... at 2026-08-15T08:00:00Z",
           "locator": "revisions"
+        },
+        {
+          "artifact": "device_design.json",
+          "claim": "junction Lj_nH [10.0, 10.0] for geom-Q1/geom-Q4 (identical across all 32 components)",
+          "locator": "components[geom-Q1].Lj_nH"
         }
       ],
       "device_model_evidence": [
@@ -513,6 +525,11 @@
           "artifact": "local_subsystem.json",
           "claim": "coupling_refs ['design-21', 'model-20']: design_ref design-21 and model_ref model-20 from different revisions for qubits [1, 4]",
           "locator": "coupling_refs; design_ref; model_ref"
+        },
+        {
+          "artifact": "device_model.json",
+          "claim": "Independent junction cross-check: D21 design junctions Lj = [10.0, 10.0] nH give EJ = (Phi0/2pi)^2/Lj = [16.35, 16.35] GHz, but model-20 uses EJ = [20.1, 19.8] GHz (implying Lj = [8.13, 8.26] nH, asymmetric where the design is symmetric); max relative mismatch 23.0%. So the model's transmon parameters, not only its coupling, are inconsistent with the current geometry, further evidence it was not derived from D21 (the D20 geometry is not supplied, so a match to D20 cannot be confirmed).",
+          "locator": "parameters.EJ_GHz"
         }
       ],
       "control_evidence": [
@@ -556,7 +573,7 @@
       ]
     }
   },
-  "runtime_seconds": 8.238494576999983,
+  "runtime_seconds": 4.875241109000001,
   "environment": {
     "python": "3.13.18",
     "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
