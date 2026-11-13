@@ -1,0 +1,121 @@
+{
+  "model_id": "model-20",
+  "model_source_revision": "D20",
+  "design_revision": "D21",
+  "qubits": [
+    1,
+    4
+  ],
+  "single_transmon": {
+    "Q1": {
+      "f01_GHz": 6.079292153258873,
+      "anharmonicity_MHz": -277.3006554502864,
+      "n01": 1.2326474371145264,
+      "EJ_over_EC": 80.4
+    },
+    "Q4": {
+      "f01_GHz": 6.145621187328025,
+      "anharmonicity_MHz": -289.37510027568345,
+      "n01": 1.2152755998046447,
+      "EJ_over_EC": 76.15384615384616
+    }
+  },
+  "ncut_convergence_f01_delta_MHz": 1.1368683772161603e-10,
+  "coupled": {
+    "model20_g16": {
+      "G_charge_coupling_GHz": 0.010680862576287265,
+      "bare_detuning_MHz": 66.32903406915247,
+      "dressed_01_10_splitting_MHz": 73.64475683034932,
+      "exchange_g_from_splitting_MHz": 16.000073812755474,
+      "static_ZZ_kHz": 3561.2940568378813
+    },
+    "design21_g18": {
+      "G_charge_coupling_GHz": 0.012015970398323172,
+      "bare_detuning_MHz": 66.32903406915247,
+      "dressed_01_10_splitting_MHz": 75.46889990970573,
+      "exchange_g_from_splitting_MHz": 18.000097868028334,
+      "static_ZZ_kHz": 4491.626897211292
+    },
+    "design21_g18_6levels": {
+      "G_charge_coupling_GHz": 0.012015970398323169,
+      "bare_detuning_MHz": 66.32903406915247,
+      "dressed_01_10_splitting_MHz": 75.46890950263307,
+      "exchange_g_from_splitting_MHz": 18.00010792307807,
+      "static_ZZ_kHz": 4490.150110606402
+    }
+  },
+  "reduced_rate": {
+    "assumption": "Effective entangling angular rate is 2*pi*g_MHz/1000 rad/ns. Proxy g includes drive scaling. This is a supplied effective model, not a claimed ab initio transmon extraction. U(theta)=exp(-i theta ZZ/2); SX basis changes realize YY pair blocks.",
+    "omega_model20_rad_per_ns": 0.10053096491487339,
+    "omega_design21_rad_per_ns": 0.11309733552923255,
+    "calibration_nominal_rate_rad_per_ns": 0.10053096491487339,
+    "calibration_matches_model20": true,
+    "realized_angle_rad": 1.7671458676442586,
+    "intended_angle_rad": 1.5707963267948966
+  },
+  "design_cross_check": {
+    "design21_Lj_nH": [
+      10.0,
+      10.0
+    ],
+    "design21_EJ_from_Lj_GHz": [
+      16.346151273375042,
+      16.346151273375042
+    ],
+    "model20_EJ_GHz": [
+      20.1,
+      19.8
+    ],
+    "model20_implied_Lj_nH": [
+      8.132413568843306,
+      8.255631956250024
+    ],
+    "model20_implied_total_C_fF": [
+      77.4809172986365,
+      74.50088201791971
+    ],
+    "design21_junction_Cj_fF": [
+      2.0,
+      2.0
+    ],
+    "note": "EC depends on total island capacitance (cross + gap + junction), which needs an EM extraction not supplied; only the junction Cj is given, so EC is not cross-checked.",
+    "f01_if_EJ_from_D21_Lj_GHz": [
+      5.4552856085129005,
+      5.5577273057319445
+    ]
+  },
+  "proposed_model_record": {
+    "artifact_id": "model-21-candidate",
+    "source_geometry_fingerprint": "74a51d718cc33d6f422f4ffd3633011bf2890fb066bb200d4afa81e5f6f08c0e",
+    "created_at": "2026-07-01T09:00:00Z",
+    "model_kind": "two weakly anharmonic transmons; reduced exchange proxy",
+    "qubits": [
+      1,
+      4
+    ],
+    "parameters": {
+      "EJ_GHz": [
+        20.1,
+        19.8
+      ],
+      "EC_GHz": [
+        0.25,
+        0.26
+      ],
+      "ng": [
+        0.0,
+        0.0
+      ],
+      "ncut": 20,
+      "truncated_dim": 3
+    },
+    "coupling_proxy_MHz": 18.0,
+    "units": {
+      "energy": "GHz",
+      "coupling": "MHz"
+    },
+    "reduced_assumption": "Effective entangling angular rate is 2*pi*g_MHz/1000 rad/ns. Proxy g includes drive scaling. This is a supplied effective model, not a claimed ab initio transmon extraction. U(theta)=exp(-i theta ZZ/2); SX basis changes realize YY pair blocks.",
+    "created_by": "extensions/scqubits_model/reconstruct_model.py",
+    "notes": "Coupling proxy taken from design-21 local_region; transmon EJ/EC retained from model-20 pending an EM capacitance extraction and junction characterization for D21 (see design_cross_check)."
+  }
+}
