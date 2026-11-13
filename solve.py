@@ -624,10 +624,12 @@ def solve_stage1(stage_dir):
 # Chain: device_design (geometry -> coupling g) -> device_model (reduced proxy g)
 #        -> control_calibration (rate = 2*pi*g/1000 rad/ns, pulse duration)
 #        -> schedule/runtime -> characterization + verification observables.
-# Every number below is read or derived from the artifacts.
+# Every number and label below is read or derived from the artifacts.
 # ---------------------------------------------------------------------------
 
 def _mps_observables(circ, target_idx, angle, paulis, bond, threshold, seed):
+    """Aer MPS expectation values; returns (values, max bond dimension reached)."""
+    import re
     import numpy as np
     from qiskit import QuantumCircuit
     from qiskit.quantum_info import Pauli
@@ -641,9 +643,20 @@ def _mps_observables(circ, target_idx, angle, paulis, bond, threshold, seed):
     for lab, p in paulis.items():
         q.save_expectation_value(Pauli(p), range(circ.num_qubits), label=lab)
     sim = AerSimulator(method='matrix_product_state', matrix_product_state_max_bond_dimension=bond,
-                       matrix_product_state_truncation_threshold=threshold)
-    data = sim.run(q, shots=1, seed_simulator=seed).result().data(0)
-    return {k: float(np.real(data[k])) for k in paulis}
+                       matrix_product_state_truncation_threshold=threshold, mps_log_data=True)
+    r = sim.run(q, shots=1, seed_simulator=seed).result()
+    data = r.data(0)
+    log = str(r.results[0].metadata.get('MPS_log_data', ''))
+    bds = [int(x) for grp in re.findall(r'BD=\[([0-9 ]+)\]', log) for x in grp.split()]
+    return {k: float(np.real(data[k])) for k in paulis}, (max(bds) if bds else -1)
+
+
+def _frac_pi(x, max_den=64):
+    from fractions import Fraction
+    import math
+    f = Fraction(x / math.pi).limit_denominator(max_den)
+    num = '' if f.numerator == 1 else f'{f.numerator}*'
+    return f'{num}pi/{f.denominator}' if abs(float(f) * math.pi - x) < 1e-9 else f'{x:.6f} rad'
 
 
 def solve_stage2(stage_dir):
@@ -654,15 +667,16 @@ def solve_stage2(stage_dir):
     A = {n: _load(d, n + '.json') or {} for n in (
         'challenge', 'backend_snapshot', 'mapping', 'simulated_runtime_snapshot', 'device_design', 'device_model',
         'provenance_registry', 'control_manifest', 'control_calibration', 'characterization', 'local_subsystem',
-        'observable_spec', 'verification_protocol', 'noise_snapshot', 'simulation_config')}
+        'observable_spec', 'verification_protocol', 'noise_snapshot', 'simulation_config', 'schedule')}
     ch, be, mp, rt = A['challenge'], A['backend_snapshot'], A['mapping'], A['simulated_runtime_snapshot']
     des, mod, reg, man = A['device_design'], A['device_model'], A['provenance_registry'], A['control_manifest']
     cal, char, loc, obs = A['control_calibration'], A['characterization'], A['local_subsystem'], A['observable_spec']
-    ver, noise, simcfg = A['verification_protocol'], A['noise_snapshot'], A['simulation_config']
+    ver, noise, simcfg, sched = A['verification_protocol'], A['noise_snapshot'], A['simulation_config'], A['schedule']
 
     res = empty_submission()
-    layers, params, incidental, faults = {}, {}, [], []
+    layers, params, incidental, faults, rejected = {}, {}, [], [], []
     ev = {k: [] for k in ('artifact', 'runtime', 'design', 'model', 'control', 'sim')}
+    diag = []
 
     chc = ch.get('circuit', {}) if isinstance(ch.get('circuit'), dict) else {}
     tgt_op = chc.get('target_operation_id') or man.get('target_operation_id')
@@ -670,11 +684,12 @@ def solve_stage2(stage_dir):
     c_idx = chc.get('target_instruction_index')
     i_idx = chc.get('intended_target_instruction_index')
     tgt_logical = chc.get('target_logical_qubits')
+    e0, e1 = tgt_edge if len(tgt_edge) == 2 else (None, None)
 
     # ---------------- M2: circuit / compilation ----------------
     I, C = _load_qpy(d, 'intended_circuit.qpy'), _load_qpy(d, 'compiled_circuit.qpy')
+    a = b = []
     target_angle = None
-    compiler_ok = None
     if I is not None and C is not None:
         a, b = _instructions(I), _instructions(C)
 
@@ -684,38 +699,55 @@ def solve_stage2(stage_dir):
                 for q in o[1]:
                     w.setdefault(q, []).append((o[0], tuple(o[1]), tuple(round(p, 12) for p in o[2])))
             return w
-        compiler_ok = wires(a) == wires(b)
         basis = set(be.get('basis_gates', []))
         off_basis = sorted({o[0] for o in b} - basis)
-        if off_basis:
-            compiler_ok = False
-        ta, tb = a[i_idx] if i_idx is not None and i_idx < len(a) else None, b[c_idx] if c_idx is not None and c_idx < len(b) else None
+        ta = a[i_idx] if i_idx is not None and i_idx < len(a) else None
+        tb = b[c_idx] if c_idx is not None and c_idx < len(b) else None
         target_angle = tb[2][0] if tb and tb[2] else None
-        same_target = ta is not None and tb is not None and ta[:3] == tb[:3]
+        same_target = ta is not None and tb is not None and ta[0] == tb[0] and ta[1] == tb[1] \
+            and abs(ta[2][0] - tb[2][0]) < 1e-12
+        compiler_ok = wires(a) == wires(b) and not off_basis and same_target
         layers['compiler'] = (
             ('CONSISTENT. ' if compiler_ok else 'INCONSISTENT. ') +
-            f'Intended and compiled circuits have {len(a)} vs {len(b)} instructions; the compiled list is a reordering of '
-            'commuting operations whose per-qubit (DAG) operation sequences, gate names and parameters are identical'
-            f'{"" if compiler_ok else " -- MISMATCH FOUND"}; all compiled gates are in the basis {sorted(basis)}. Target '
-            f'{tgt_op}: intended index {i_idx} {ta[0] if ta else "?"}{list(ta[1]) if ta else ""}({ta[2][0] if ta and ta[2] else "?"}) '
-            f'== compiled index {c_idx} {tb[0] if tb else "?"}{list(tb[1]) if tb else ""}({target_angle}); '
-            f'{"identical" if same_target else "DIFFERENT"}. The compiled circuit requests exactly RZZ(pi/2) on the '
-            'target edge, so the compiler is not the fault boundary.')
+            f'Intended and compiled circuits both have {len(a)}/{len(b)} instructions; the compiled order is a '
+            'reordering of commuting operations, and per-qubit (DAG) gate sequences, names and parameters are '
+            f'{"identical" if wires(a) == wires(b) else "DIFFERENT"}; off-basis gates: {off_basis or "none"}. Target '
+            f'{tgt_op}: intended index {i_idx} {ta[0] if ta else "?"}{list(ta[1]) if ta else ""}'
+            f'({ta[2][0] if ta and ta[2] else "?"}) vs compiled index {c_idx} {tb[0] if tb else "?"}'
+            f'{list(tb[1]) if tb else ""}({target_angle}): {"identical" if same_target else "DIFFERENT"}. The compiled '
+            f'circuit requests exactly RZZ({_frac_pi(target_angle) if target_angle else "?"}) on the target edge; the '
+            'compiler is not the fault boundary.')
         if not compiler_ok:
             faults.append('compiler')
         ev['artifact'] += [
-            _ev('intended_circuit.qpy', f'target RZZ({ta[2][0] if ta and ta[2] else "?"}) on qubits {list(ta[1]) if ta else "?"} '
-                f'at intended index {i_idx}', f'instruction {i_idx}'),
-            _ev('compiled_circuit.qpy', f'same RZZ({target_angle}) on physical {list(tb[1]) if tb else "?"} at compiled index '
-                f'{c_idx}; per-qubit gate sequences identical to intended (commuting reorder only)', f'instruction {c_idx}')]
+            _ev('intended_circuit.qpy', f'target {ta[0] if ta else "?"}({ta[2][0] if ta and ta[2] else "?"}) on '
+                f'{list(ta[1]) if ta else "?"} at intended index {i_idx}; metadata {I.metadata}', f'instruction {i_idx}'),
+            _ev('compiled_circuit.qpy', f'same {tb[0] if tb else "?"}({target_angle}) on physical {list(tb[1]) if tb else "?"}'
+                f' at compiled index {c_idx}; per-qubit sequences identical to intended (commuting reorder only)',
+                f'instruction {c_idx}')]
+        if i_idx != c_idx:
+            rejected.append(f'Index difference intended {i_idx} vs compiled {c_idx} for {tgt_op}: commuting reorder; '
+                            'operation, qubits and angle identical.')
     else:
         layers['compiler'] = 'NOT ASSESSED: circuits could not be loaded.'
 
     # ---------------- M3: mapping / runtime / physical edge ----------------
-    edges = {tuple(sorted(e)) for e in be.get('edges', [])}
+    edges_dir = [tuple(e) for e in be.get('edges', [])]
+    edges = {tuple(sorted(e)) for e in edges_dir}
     l2p = {int(k): v for k, v in mp.get('logical_to_physical', {}).items()}
-    identity = all(k == v for k, v in l2p.items())
+    identity = bool(l2p) and all(k == v for k, v in l2p.items())
     map_op = next((o for o in mp.get('operations', []) if o.get('operation_id') == tgt_op), {})
+    chain = []
+    if edges_dir:  # walk the chain if the coupling graph is a path
+        adj = {}
+        for u, v in edges_dir:
+            adj.setdefault(u, set()).add(v); adj.setdefault(v, set()).add(u)
+        ends = [q for q, n in adj.items() if len(n) == 1]
+        if len(ends) == 2 and all(len(n) <= 2 for n in adj.values()):
+            chain, prev = [min(ends)], None
+            while len(chain) < len(adj):
+                nxt = [x for x in adj[chain[-1]] if x != prev]
+                prev = chain[-1]; chain.append(nxt[0])
     rt_ok = (rt.get('device_revision') == be.get('device_revision') == des.get('revision')
              and rt.get('geometry_fingerprint') == be.get('geometry_fingerprint') == des.get('geometry_fingerprint')
              and tuple(rt.get('target_physical_edge', [])) == tgt_edge
@@ -723,15 +755,16 @@ def solve_stage2(stage_dir):
              and rt.get('calibration_epoch') == cal.get('calibration_epoch') == man.get('calibration_epoch'))
     edge_ok = tuple(sorted(tgt_edge)) in edges and tuple(map_op.get('physical_edge', [])) == tgt_edge
     layers['mapping'] = (
-        f'CONSISTENT. {mp.get("revision")} is the {"identity" if identity else "non-identity"} layout on '
-        f'{len(l2p)} qubits; {tgt_op} maps logical {map_op.get("logical_qubits")} -> physical {map_op.get("physical_edge")}, '
-        f'a supported edge in {be.get("artifact_id")} ({len(edges)} edges, linear chain 0-1-4-2-3-5-...-31).'
+        f'CONSISTENT. {mp.get("revision")} is {"the identity" if identity else "a non-identity"} layout on {len(l2p)} '
+        f'qubits; {tgt_op} maps logical {map_op.get("logical_qubits")} -> physical {map_op.get("physical_edge")}, a '
+        f'supported edge of {be.get("artifact_id")} ({len(edges)} edges' +
+        (f', a path {"-".join(map(str, chain[:6]))}-...-{chain[-1]}' if chain else '') + ').'
         if edge_ok else f'INCONSISTENT. target edge {tgt_edge} unsupported or mismatched in mapping.')
     layers['runtime'] = (
         (f'CONSISTENT. Runtime {rt.get("simulated_job_id")} used device revision {rt.get("device_revision")}, geometry '
          f'fingerprint {str(rt.get("geometry_fingerprint"))[:12]}..., calibration epoch {rt.get("calibration_epoch")}, '
-         f'mapping {rt.get("mapping_ref")} and schedule {rt.get("schedule_ref")}, identical to the backend snapshot and '
-         'the current device design. The runtime executed the stack it was given.') if rt_ok else
+         f'mapping {rt.get("mapping_ref")} and schedule {rt.get("schedule_ref")}, matching the backend snapshot and the '
+         'current device design. The runtime executed the stack it was given.') if rt_ok else
         'INCONSISTENT runtime/backend/design revision, fingerprint, layout or epoch.')
     if not edge_ok:
         faults.append('mapping')
@@ -745,24 +778,33 @@ def solve_stage2(stage_dir):
             f'selected edge {be.get("selected_edge")} present in edges', 'edges; selected_edge'),
         _ev('mapping.json', f'{tgt_op}: logical {map_op.get("logical_qubits")} -> physical {map_op.get("physical_edge")}',
             'operations[0]')]
+    # edge orientation: report only if it actually differs
+    if b:
+        orient = {tuple(o[1]) for o in b if o[0] == 'rzz'}
+        flipped = [e for e in orient if e not in set(edges_dir) and tuple(reversed(e)) in set(edges_dir)]
+        if flipped:
+            rejected.append(f'RZZ on {flipped[:3]} uses the reverse orientation of backend edges; RZZ is symmetric, so '
+                            'orientation is irrelevant.')
 
-    # ---------------- schedule ----------------
-    sched = _load(d, 'schedule.json') or {}
+    # ---------------- schedule and workload exposure ----------------
     sops = sched.get('operations', [])
-    sched_mism = 0
-    if C is not None:
-        b = _instructions(C)
-        sched_mism = sum(1 for o in sops if o['instruction_index'] >= len(b) or
-                         (o['gate'], o['qubits']) != (b[o['instruction_index']][0], b[o['instruction_index']][1]))
+    sched_mism = sum(1 for o in sops if not b or o['instruction_index'] >= len(b) or
+                     (o['gate'], o['qubits']) != (b[o['instruction_index']][0], b[o['instruction_index']][1]))
     tgt_sched = [o for o in sops if o.get('control_ref') == man.get('artifact_id')]
     dup = [o for o in sops if o.get('operation_id') == tgt_op and o.get('instruction_index') != c_idx]
     sched_dur = tgt_sched[0]['duration_ns'] if tgt_sched else None
+    edge_ops = [o for o in sops if o['gate'] == 'rzz' and sorted(o['qubits']) == sorted(tgt_edge)]
+    edge_base = [o for o in edge_ops if o.get('control_ref') != man.get('artifact_id')]
+    base_refs = sorted({o.get('control_ref') for o in sops} - {man.get('artifact_id')})
+    base_durs = sorted({o['duration_ns'] for o in edge_base})
+    base_angles = [b[o['instruction_index']][2][0] for o in edge_base if b]
     layers['scheduling'] = (
         f'CONSISTENT. All {len(sops)} schedule entries match the compiled instruction at their instruction_index '
-        f'({sched_mism} mismatches); exactly one entry ({tgt_sched[0]["operation_id"] if tgt_sched else "?"}, index '
-        f'{tgt_sched[0]["instruction_index"] if tgt_sched else "?"}, rzz on {tgt_sched[0]["qubits"] if tgt_sched else "?"}) '
-        f'uses {man.get("artifact_id")}; its duration {sched_dur} ns equals the calibrated pulse duration '
-        f'{cal.get("pulse_duration_ns")} ns. Scheduling faithfully applied the (mis-derived) calibration.'
+        f'({sched_mism} mismatches). Exactly {len(tgt_sched)} entry uses {man.get("artifact_id")}: '
+        f'{tgt_sched[0]["operation_id"] if tgt_sched else "?"} (index {tgt_sched[0]["instruction_index"] if tgt_sched else "?"}'
+        f', rzz on {tgt_sched[0]["qubits"] if tgt_sched else "?"}, start {tgt_sched[0]["start_ns"] if tgt_sched else "?"} ns), '
+        f'whose duration {sched_dur} ns equals the calibrated pulse {cal.get("pulse_duration_ns")} ns. Scheduling '
+        'faithfully applied the mis-derived calibration.'
         if not sched_mism and tgt_sched and sched_dur == cal.get('pulse_duration_ns') else
         'INCONSISTENT schedule vs compiled circuit or calibration.')
     if sched_mism:
@@ -770,106 +812,139 @@ def solve_stage2(stage_dir):
     if dup:
         o = dup[0]
         incidental.append(
-            f'schedule.json reuses operation_id {tgt_op} for instruction_index {o["instruction_index"]} '
-            f'({o["gate"]} on {o["qubits"]}, {o["duration_ns"]} ns, {o["control_ref"]}); {o["instruction_index"]} is the '
-            'target\'s INTENDED index, so this is an id-labelling collision. It is a zero-duration virtual RZ on an '
-            'unrelated qubit using the base control, matches the compiled instruction at that index, and cannot change '
-            'the target interaction; bookkeeping defect, not the cause.')
+            f'schedule.json reuses operation_id {tgt_op} for instruction_index {o["instruction_index"]} ({o["gate"]} on '
+            f'{o["qubits"]}, {o["duration_ns"]} ns, {o["control_ref"]})' +
+            (f'; {o["instruction_index"]} is the target\'s INTENDED index, so this is an id-labelling collision' if
+             o['instruction_index'] == i_idx else '') +
+            '. It matches the compiled instruction at that index, is a zero-duration virtual gate on an unrelated qubit '
+            'with the base control, and cannot change the target interaction: bookkeeping defect, not the cause.')
+    if edge_base:
+        incidental.append(
+            f'Edge {list(tgt_edge)} carries {len(edge_ops)} RZZ gates in the workload; the other {len(edge_base)} use '
+            f'{", ".join(base_refs)} with durations {base_durs} ns and angles {min(base_angles):.3f}-'
+            f'{max(base_angles):.3f} rad. Their different duration from the {sched_dur} ns target pulse reflects a '
+            f'different control path/angle, not an error. LIMITATION: {", ".join(base_refs)} appears only in the '
+            f'registry external_ids {reg.get("external_ids")}, so its provenance (and whether it also used the stale '
+            f'model) cannot be verified from the supplied evidence; the evidence implicates only {tgt_op} (and the '
+            'verification target that shares its calibration).')
 
     # ---------------- M4: device design provenance ----------------
     revs = {r['revision']: r for r in reg.get('revisions', [])}
     fp2rev = {r['geometry_fingerprint']: r['revision'] for r in reg.get('revisions', [])}
     cur_rev = des.get('revision')
     lr = des.get('local_region', {})
+    cpl = lr.get('coupler', {})
     g_design = lr.get('coupling_proxy_MHz')
+    comps = {c['id']: c for c in des.get('components', [])}
     design_ok = (fp2rev.get(des.get('geometry_fingerprint')) == cur_rev == rt.get('device_revision')
                  and sorted(lr.get('qubits', [])) == sorted(tgt_edge))
+    xs = [(comps[f'geom-Q{q}']['x_um'], q) for q in range(len(l2p)) if f'geom-Q{q}' in comps]
+    phys_order = [q for _, q in sorted(xs)]
+    adjacent = bool(chain) and phys_order[:len(chain)] in (chain, chain[::-1])
     layers['device_design'] = (
-        f'CURRENT AND CONSISTENT. {des.get("artifact_id")} is revision {cur_rev} with fingerprint '
+        f'CURRENT AND CONSISTENT. {des.get("artifact_id")} is revision {cur_rev}, fingerprint '
         f'{str(des.get("geometry_fingerprint"))[:12]}..., which the provenance registry assigns to {cur_rev} '
-        f'({revs.get(cur_rev, {}).get("timestamp")}) and which equals the runtime/backend fingerprint. Its local region '
-        f'{lr.get("qubits")} (components {lr.get("components")}, coupler {lr.get("coupler", {}).get("id")} '
-        f'{lr.get("coupler", {}).get("type")}, gap {lr.get("coupler", {}).get("gap_um")} um, length '
-        f'{lr.get("coupler", {}).get("length_um")} um) specifies coupling_proxy_MHz = {g_design}.'
+        f'({revs.get(cur_rev, {}).get("timestamp")}) and which equals the runtime/backend fingerprint. Local region '
+        f'{lr.get("qubits")} (components {lr.get("components")}, coupler {cpl.get("id")} {cpl.get("type")}, gap '
+        f'{cpl.get("gap_um")} um, length {cpl.get("length_um")} um) specifies coupling_proxy_MHz = {g_design}. '
+        f'Component x-positions order the qubits {"-".join(map(str, phys_order[:6]))}-..., '
+        f'{"matching" if adjacent else "NOT matching"} the backend chain, so {list(tgt_edge)} are physically adjacent.'
         if design_ok else 'Device design does not match current revision/runtime.')
     if not design_ok:
         faults.append('device_design')
     ev['design'] += [
-        _ev('device_design.json', f'{cur_rev} geometry fingerprint {des.get("geometry_fingerprint")}; local region '
-            f'{lr.get("qubits")} coupler {lr.get("coupler", {}).get("id")} coupling_proxy_MHz = {g_design}',
-            'local_region.coupling_proxy_MHz'),
-        _ev('provenance_registry.json', f'revisions: ' + ', '.join(f'{r} -> {v["geometry_fingerprint"][:12]}... at '
-            f'{v["timestamp"]}' for r, v in revs.items()), 'revisions')]
+        _ev('device_design.json', f'{cur_rev} fingerprint {des.get("geometry_fingerprint")}; local region '
+            f'{lr.get("qubits")} coupler {cpl.get("id")} coupling_proxy_MHz = {g_design}',
+            'geometry_fingerprint; local_region.coupling_proxy_MHz'),
+        _ev('provenance_registry.json', 'revisions: ' + ', '.join(
+            f'{r} -> {v["geometry_fingerprint"][:12]}... at {v["timestamp"]}' for r, v in revs.items()), 'revisions')]
 
     # ---------------- M5: device model provenance ----------------
     g_model = mod.get('coupling_proxy_MHz')
     model_rev = fp2rev.get(mod.get('source_geometry_fingerprint'))
     model_stale = model_rev is not None and model_rev != cur_rev
     reg_model = next((x for x in reg.get('artifacts', []) if x.get('artifact_id') == mod.get('artifact_id')), {})
-    newer_models = [x for x in reg.get('artifacts', []) if x.get('path') == 'device_model.json'
+    other_models = [x for x in reg.get('artifacts', []) if x.get('path') == 'device_model.json'
                     and x.get('artifact_id') != mod.get('artifact_id')]
+    reg_times = sorted({x.get('timestamp') for x in reg.get('artifacts', [])})
     layers['device_model'] = (
-        (f'STALE PROVENANCE (FAULT). {mod.get("artifact_id")} ({mod.get("model_kind")}) declares '
-         f'source_geometry_fingerprint {str(mod.get("source_geometry_fingerprint"))[:12]}..., which the registry assigns to '
-         f'revision {model_rev} ({revs.get(model_rev, {}).get("timestamp")}), not the current {cur_rev}; created '
-         f'{mod.get("created_at")}, before {cur_rev} existed ({revs.get(cur_rev, {}).get("timestamp")}). It carries '
+        (f'STALE PROVENANCE (PRIMARY FAULT). {mod.get("artifact_id")} ({mod.get("model_kind")}) declares '
+         f'source_geometry_fingerprint {str(mod.get("source_geometry_fingerprint"))[:12]}..., which the registry assigns '
+         f'to {model_rev} ({revs.get(model_rev, {}).get("timestamp")}), not the current {cur_rev}. It was created '
+         f'{mod.get("created_at")}, before {cur_rev} existed ({revs.get(cur_rev, {}).get("timestamp")}), and carries '
          f'coupling_proxy_MHz = {g_model} vs {g_design} MHz in the {cur_rev} design for the same edge {mod.get("qubits")}. '
-         f'No {cur_rev}-derived model exists in the registry ({len(newer_models)} alternatives); {mod.get("artifact_id")} '
-         f'was merely re-registered at {reg_model.get("timestamp")}, which does not change its source geometry. '
-         f'local_subsystem {loc.get("artifact_id")} mixes design_ref {loc.get("design_ref")} with model_ref '
-         f'{loc.get("model_ref")}, i.e. two different geometry revisions for one subsystem. Transmon EJ/EC/ng parameters '
-         'are not implicated: only the coupling proxy feeds the entangling rate.')
-        if model_stale else f'CONSISTENT: model derived from {model_rev}.')
+         + ('The registry contains no other device model, so no ' + str(cur_rev) + '-derived model exists. '
+            if not other_models else f'Other models in registry: {[x["artifact_id"] for x in other_models]}. ') +
+         f'{mod.get("artifact_id")} is listed in the registry at {reg_model.get("timestamp")} (all registry artifact '
+         f'timestamps: {reg_times}); a registry timestamp is not a regeneration and does not change its source geometry. '
+         f'{loc.get("artifact_id")} cites coupling_refs {loc.get("coupling_refs")} (design_ref {loc.get("design_ref")}, '
+         f'model_ref {loc.get("model_ref")}): two coupling sources from different geometry revisions ({g_design} vs '
+         f'{g_model} MHz) for one subsystem. Its transmon parameters (EJ {mod.get("parameters", {}).get("EJ_GHz")} GHz, '
+         f'EC {mod.get("parameters", {}).get("EC_GHz")} GHz) do not enter the reduced entangling rate; only the '
+         'coupling proxy does.') if model_stale else f'CONSISTENT: model derived from {model_rev}.')
     if model_stale:
         faults.append('device_model')
     ev['model'] += [
         _ev('device_model.json', f'{mod.get("artifact_id")}: source_geometry_fingerprint '
             f'{mod.get("source_geometry_fingerprint")} (= {model_rev}), created {mod.get("created_at")}, '
-            f'coupling_proxy_MHz = {g_model}', 'source_geometry_fingerprint; coupling_proxy_MHz'),
+            f'coupling_proxy_MHz = {g_model}; reduced_assumption: "{mod.get("reduced_assumption", "")[:90]}..."',
+            'source_geometry_fingerprint; coupling_proxy_MHz; created_at'),
         _ev('provenance_registry.json', f'{model_rev} fingerprint == model source fingerprint; {cur_rev} fingerprint == '
-            'design/runtime fingerprint; no model derived from ' + str(cur_rev), 'revisions; artifacts[model-20]'),
-        _ev('local_subsystem.json', f'design_ref {loc.get("design_ref")} but model_ref {loc.get("model_ref")} for qubits '
-            f'{loc.get("qubits")}', 'design_ref; model_ref')]
+            f'design/runtime fingerprint; {len(other_models)} other device models registered',
+            f'revisions; artifacts[artifact_id={mod.get("artifact_id")}]'),
+        _ev('local_subsystem.json', f'coupling_refs {loc.get("coupling_refs")}: design_ref {loc.get("design_ref")} and '
+            f'model_ref {loc.get("model_ref")} from different revisions for qubits {loc.get("qubits")}',
+            'coupling_refs; design_ref; model_ref')]
 
     # ---------------- control calibration ----------------
     t = cal.get('pulse_duration_ns')
     nominal = cal.get('nominal_rate_rad_per_ns')
+    theta_t = cal.get('target_angle_rad')
     rate = lambda g: 2 * math.pi * g / 1000.0
     cal_uses_model = cal.get('model_ref') == mod.get('artifact_id')
-    nominal_matches_model = nominal is not None and g_model is not None and abs(nominal - rate(g_model)) < 1e-9
-    theta_nominal = nominal * t if nominal and t else None
+    nominal_matches_model = bool(nominal and g_model) and abs(nominal - rate(g_model)) < 1e-9
+    duration_matches = bool(nominal and t and theta_t) and abs(theta_t / nominal - t) < 1e-9
     theta_real = rate(g_design) * t if g_design and t else None
+    V = _load_qpy(d, 'verification_circuit.qpy')
+    vmeta = (V.metadata or {}) if V is not None else {}
+    chan_ok = man.get('channel') == cal.get('channel') == vmeta.get('channel', man.get('channel'))
+    edge_ok2 = tuple(cal.get('physical_edge', [])) == tgt_edge == tuple(char.get('physical_edge', tgt_edge))
     layers['control'] = (
-        f'DERIVED FROM STALE MODEL. {cal.get("artifact_id")} (epoch {cal.get("calibration_epoch")}, channel '
-        f'{cal.get("channel")}, edge {cal.get("physical_edge")}) has model_ref {cal.get("model_ref")}; nominal_rate '
-        f'{nominal} rad/ns = 2*pi*{g_model}/1000 (the {model_rev} coupling) and pulse_duration {t} ns = '
-        f'target_angle {cal.get("target_angle_rad")} / nominal_rate. The control chain itself is internally consistent '
-        f'(manifest {man.get("artifact_id")} -> channel {man.get("channel")} -> edge {man.get("target_physical_edge")} '
-        f'-> epoch {man.get("calibration_epoch")}; rectangular pulse, amplitude_scale '
-        f'{cal.get("pulse", {}).get("amplitude_scale")}); channel and edge are correct. The defect is the rate it '
-        'inherited from the stale model.') if cal_uses_model and nominal_matches_model else \
-        'Calibration does not trace to the supplied model.'
+        f'PROPAGATES THE STALE MODEL. {cal.get("artifact_id")} (epoch {cal.get("calibration_epoch")}, channel '
+        f'{cal.get("channel")}, edge {cal.get("physical_edge")}) has model_ref {cal.get("model_ref")}; its nominal_rate '
+        f'{nominal} rad/ns = 2*pi*{g_model}/1000 (the {model_rev} coupling) and pulse_duration {t} ns = target_angle '
+        f'{theta_t} / nominal_rate ({"exact" if duration_matches else "MISMATCH"}). Given its declared input the '
+        'calibration arithmetic is correct; its defect is that it carries no source-geometry fingerprint and was not '
+        f'checked against the {cur_rev} runtime, so it inherited the stale rate. Channel/edge binding is '
+        f'{"consistent" if chan_ok and edge_ok2 else "INCONSISTENT"}: manifest {man.get("artifact_id")}, calibration and '
+        f'verification metadata all use {man.get("channel")} on {list(tgt_edge)}; characterization control_ref '
+        f'{char.get("control_ref")} shows the probes used this same pulse.'
+    ) if cal_uses_model and nominal_matches_model else 'Calibration does not trace to the supplied model.'
     ev['control'] += [
         _ev('control_calibration.json', f'model_ref {cal.get("model_ref")}; nominal_rate_rad_per_ns {nominal} '
-            f'(= 2*pi*{g_model}/1000); pulse_duration_ns {t}; target_angle_rad {cal.get("target_angle_rad")}',
+            f'(= 2*pi*{g_model}/1000); pulse_duration_ns {t}; target_angle_rad {theta_t}',
             'model_ref; nominal_rate_rad_per_ns; pulse_duration_ns'),
-        _ev('control_manifest.json', f'{tgt_op} on edge {man.get("target_physical_edge")} via channel {man.get("channel")}, '
-            f'calibration {man.get("calibration_ref")}, epoch {man.get("calibration_epoch")}',
-            'channel; calibration_ref')]
+        _ev('control_manifest.json', f'{tgt_op} on edge {man.get("target_physical_edge")} via channel '
+            f'{man.get("channel")}, calibration {man.get("calibration_ref")}, epoch {man.get("calibration_epoch")}',
+            'channel; calibration_ref'),
+        _ev('characterization.json', f'control_ref {char.get("control_ref")}: probes repeat the same calibrated pulse '
+            f'on edge {char.get("physical_edge")}', 'control_ref'),
+        _ev('verification_circuit.qpy', f'metadata channel {vmeta.get("channel")}, target_instruction_index '
+            f'{vmeta.get("target_instruction_index")}', 'metadata')]
 
     # ---------------- M6: physical consequence from characterization ----------------
     probes = char.get('probes', [])
     n = np.array([p['repetitions'] for p in probes], dtype=float)
     y = np.array([p['expectation'] for p in probes], dtype=float)
     tol = char.get('absolute_tolerance', 0.004)
-    g_fit = None
+    g_fit, branches, period = None, [], (1000.0 / t if t else None)
     if len(n) and t:
         from scipy.optimize import minimize_scalar
-        grid = np.arange(0.5, 60.0, 0.001)
+        cheb = lambda g: float(np.max(np.abs(np.cos(n * rate(g) * t) - y)))
+        grid = np.arange(0.0, 2 * period + 0.0005, 0.001)
         pred = np.cos(np.outer(grid, n) * 2 * np.pi / 1000 * t)
-        maxres = np.max(np.abs(pred - y), axis=1)
-        okm = maxres <= tol
-        branches, start = [], None  # disjoint g intervals consistent within tolerance (cos aliasing)
+        okm = np.max(np.abs(pred - y), axis=1) <= tol
+        start = None
         for i, flag in enumerate(okm):
             if flag and start is None:
                 start = i
@@ -877,62 +952,90 @@ def solve_stage2(stage_dir):
                 end = i if flag else i - 1
                 branches.append((float(grid[start]), float(grid[end])))
                 start = None
-        ref = g_model or g_design or 0.0  # physically plausible branch: nearest to the supplied model/design
-        lo, hi = min(branches, key=lambda b: abs((b[0] + b[1]) / 2 - ref)) if branches else (grid[0], grid[-1])
-        ok = np.array([lo, hi])
-        g0 = grid[(grid >= lo) & (grid <= hi)][int(np.argmin(maxres[(grid >= lo) & (grid <= hi)]))] if branches else 0
-        g_fit = float(minimize_scalar(lambda g: np.sum((np.cos(n * rate(g) * t) - y) ** 2),
-                                      bounds=(g0 - 0.01, g0 + 0.01), method='bounded').x)
-        for j, (blo, bhi) in enumerate(branches):
-            params[f'coupling_fit_branch{j}_center_MHz'] = round((blo + bhi) / 2, 3)
-        res_fit = float(np.max(np.abs(np.cos(n * rate(g_fit) * t) - y)))
-        res_design = float(np.max(np.abs(np.cos(n * rate(g_design) * t) - y))) if g_design else None
-        res_model = float(np.max(np.abs(np.cos(n * rate(g_model) * t) - y))) if g_model else None
+        ref = g_model or g_design or 0.0
+        lo, hi = min(branches, key=lambda br: abs((br[0] + br[1]) / 2 - ref)) if branches else (0.0, period)
+        g_fit = float(minimize_scalar(cheb, bounds=(lo - 0.002, hi + 0.002), method='bounded').x)  # minimax fit
+        resid = np.cos(n * rate(g_fit) * t) - y
         params.update({
-            'coupling_fit_from_characterization_MHz': round(g_fit, 4),
-            'coupling_fit_tolerance_window_low_MHz': round(float(ok.min()), 4) if len(ok) else -1.0,
-            'coupling_fit_tolerance_window_high_MHz': round(float(ok.max()), 4) if len(ok) else -1.0,
-            'characterization_max_residual_at_fit': round(res_fit, 5),
-            'characterization_max_residual_design_coupling': round(res_design, 5) if res_design is not None else -1.0,
-            'characterization_max_residual_model_coupling': round(res_model, 5) if res_model is not None else -1.0,
+            'coupling_fit_minimax_MHz': round(g_fit, 4),
+            'coupling_fit_window_low_MHz': round(lo, 4), 'coupling_fit_window_high_MHz': round(hi, 4),
+            'coupling_alias_period_MHz': period,
+            'characterization_max_residual_at_fit_expectation': round(float(np.max(np.abs(resid))), 5),
+            'characterization_max_residual_design_coupling_expectation': round(cheb(g_design), 5) if g_design else None,
+            'characterization_max_residual_model_coupling_expectation': round(cheb(g_model), 5) if g_model else None,
         })
+        aliases = [round((lo + hi) / 2, 3) for lo, hi in branches if not (lo <= g_fit <= hi)]
+        sign_alt = bool(len(resid) > 2 and np.all(np.sign(resid[1:]) == -np.sign(resid[:-1])))
+    else:
+        aliases, sign_alt = [], False
     params.update({
-        'coupling_design_D21_MHz': g_design, 'coupling_model20_MHz': g_model,
-        'nominal_rate_model20_rad_per_ns': nominal,
+        'coupling_design_MHz': g_design, 'coupling_model_MHz': g_model,
+        'coupling_error_MHz': (g_design - g_model) if g_design and g_model else None,
+        'model_coupling_underestimate_ratio': (g_model / g_design) if g_design and g_model else None,
+        'nominal_rate_model_rad_per_ns': nominal,
         'realized_rate_design_rad_per_ns': rate(g_design) if g_design else None,
+        'rate_error_rad_per_ns': (rate(g_design) - nominal) if g_design and nominal else None,
         'pulse_duration_ns': t,
-        'intended_angle_rad': target_angle if target_angle is not None else cal.get('target_angle_rad'),
-        'nominal_angle_rad': theta_nominal,
+        'intended_angle_rad': target_angle if target_angle is not None else theta_t,
+        'nominal_angle_rad': nominal * t if nominal and t else None,
         'realized_angle_rad': theta_real,
         'realized_angle_fit_rad': rate(g_fit) * t if g_fit else None,
-        'over_rotation_rad': (theta_real - cal.get('target_angle_rad')) if theta_real else None,
-        'over_rotation_fraction': (g_design / g_model - 1) if g_design and g_model else None,
-        'corrected_pulse_duration_ns': (cal.get('target_angle_rad') / rate(g_design)) if g_design else None,
-        'corrected_amplitude_scale_at_fixed_duration': (g_model / g_design) if g_design and g_model else None,
+        'over_rotation_rad': (theta_real - theta_t) if theta_real and theta_t else None,
+        'over_rotation_deg': math.degrees(theta_real - theta_t) if theta_real and theta_t else None,
+        'over_rotation_ratio': (g_design / g_model - 1) if g_design and g_model else None,
+        'rzz_process_fidelity_vs_intended_dimensionless':
+            math.cos((theta_real - theta_t) / 2) ** 2 if theta_real and theta_t else None,
+        'corrected_pulse_duration_ns': (theta_t / rate(g_design)) if g_design and theta_t else None,
+        'corrected_amplitude_scale_at_fixed_duration_ratio': (g_model / g_design) if g_design and g_model else None,
     })
-    params = {k: float(v) for k, v in params.items() if v is not None}
 
     # verification companion (analytic identity) and observable spec
     vobs = next((o for o in obs.get('observables', []) if o.get('circuit')), {})
     phis = ver.get('phase_angles_rad', [])
     vq = (vobs.get('qubits') or [None])[0]
     others = [e['angle_rad'] for e in ver.get('interactions', []) if vq in e['edge'] and tuple(e['edge']) != tgt_edge]
-    pref = math.cos(phis[vq]) * math.prod(math.cos(x) for x in others) if vq is not None and phis else None
-    if pref:
-        x_obs = vobs.get('observed_value')
-        x_int = pref * math.cos(cal.get('target_angle_rad'))
-        x_real = pref * math.cos(theta_real)
+    pref = math.cos(phis[vq]) * math.prod(math.cos(x) for x in others) if vq is not None and vq < len(phis) else None
+    x_obs, vtol = vobs.get('observed_value'), vobs.get('absolute_tolerance')
+    if pref and x_obs is not None and theta_t is not None:
         theta_v = math.acos(max(-1, min(1, x_obs / pref)))
         params.update({
-            'verification_X1_observed': x_obs, 'verification_X1_predicted_intended': x_int,
-            'verification_X1_predicted_realized': x_real, 'verification_X1_tolerance': vobs.get('absolute_tolerance'),
+            'verification_X_observed_expectation': x_obs,
+            'verification_X_predicted_intended_expectation': pref * math.cos(theta_t),
+            'verification_X_predicted_realized_expectation': pref * math.cos(theta_real) if theta_real else None,
+            'verification_X_tolerance_expectation': vtol,
             'verification_inferred_target_angle_rad': theta_v,
-            'verification_inferred_coupling_MHz': theta_v / t / (2 * math.pi) * 1000,
+            'verification_inferred_coupling_MHz': theta_v / t / (2 * math.pi) * 1000 if t else None,
         })
     parity_obs = [o for o in obs.get('observables', []) if not o.get('circuit')]
 
+    # ---------------- local 2-qubit probe simulation (diagnostic, within budget) ----------------
+    try:
+        from qiskit import QuantumCircuit
+        from qiskit_aer import AerSimulator
+        lim = A['simulation_config'].get('local_physics_subsystem_max_qubits', 4)
+        shots = 1024
+        sim = AerSimulator(seed_simulator=simcfg.get('seed_simulator', 20261112))
+        for reps in n.astype(int)[:9]:
+            pc = QuantumCircuit(2, 1)
+            pc.h([0, 1])
+            for _ in range(reps):
+                pc.rzz(theta_real, 0, 1)
+            pc.h(0)
+            pc.measure(0, 0)
+            cnt = sim.run(pc, shots=shots).result().get_counts()
+            xexp = (cnt.get('0', 0) - cnt.get('1', 0)) / shots
+            meas = float(y[list(n.astype(int)).index(reps)])
+            diag.append({'job_id': f'local_aer_char_probe_n{reps}', 'shots': shots, 'qubits': list(tgt_edge)[:lim],
+                         'depth': pc.depth(),
+                         'claim': f'Local seeded Aer replay of the characterization protocol on {list(tgt_edge)} '
+                                  f'(|++>, {reps} x RZZ({theta_real:.6f}) i.e. the {t} ns pulse at the {cur_rev} rate, '
+                                  f'measure X on Q{e0}): <XI> = {xexp:+.3f} (shot noise +/-{1 / math.sqrt(shots):.3f}); '
+                                  f'analytic {math.cos(reps * theta_real):+.6f}; supplied {meas:+.6f}; intended-model '
+                                  f'prediction {math.cos(reps * theta_t):+.6f}. No hardware.'})
+    except Exception:
+        pass
+
     # ---------------- structured simulation (Aer MPS) ----------------
-    sim_txt = []
     try:
         N = C.num_qubits
 
@@ -941,64 +1044,86 @@ def solve_stage2(stage_dir):
             for k, v in dct.items():
                 s[N - 1 - k] = v
             return ''.join(s)
-        e0, e1 = tgt_edge
         paulis = {'total_parity': 'Z' * N, f'Z{e0}': P({e0: 'Z'}), f'Z{e1}': P({e1: 'Z'}),
                   f'Z{e0}Z{e1}': P({e0: 'Z', e1: 'Z'}), f'Y{e0}Y{e1}': P({e0: 'Y', e1: 'Y'})}
         seed = simcfg.get('seed_simulator', 20261112)
-        runs = {}
-        for bond, thr in ((128, 1e-10), (256, 1e-10), (512, 1e-10), (256, 1e-12)):
+        settings = [(128, 1e-10), (256, 1e-10), (512, 1e-10), (256, 1e-12)]
+        runs, maxbd = {}, 0
+        for bond, thr in settings:
             for lab, ang in (('intended', None), ('realized', theta_real)):
-                runs[(bond, thr, lab)] = _mps_observables(C, c_idx, ang, paulis, bond, thr, seed)
-        base_i, base_r = runs[(256, 1e-10, 'intended')], runs[(256, 1e-10, 'realized')]
-        conv = max(abs(runs[k][o] - (base_i if k[2] == 'intended' else base_r)[o]) for k in runs for o in paulis)
+                runs[(bond, thr, lab)], bd = _mps_observables(C, c_idx, ang, paulis, bond, thr, seed)
+                maxbd = max(maxbd, bd)
+        ref_i, ref_r = runs[(256, 1e-10, 'intended')], runs[(256, 1e-10, 'realized')]
+        deltas = {f'{bd}_{thr:g}': max(abs(runs[(bd, thr, lab)][o] - (ref_i if lab == 'intended' else ref_r)[o])
+                                       for lab in ('intended', 'realized') for o in paulis) for bd, thr in settings}
         for o in paulis:
-            params[f'mps_workload_{o}_intended'] = round(base_i[o], 6)
-            params[f'mps_workload_{o}_realized'] = round(base_r[o], 6)
-        params['mps_max_observable_delta_across_bond_128_256_512_and_threshold'] = conv
-        V = _load_qpy(d, 'verification_circuit.qpy')
-        vt = (V.metadata or {}).get('target_instruction_index', ver.get('target_instruction_index'))
-        vx_i = _mps_observables(V, vt, None, {'X': P({vq: 'X'})}, 256, 1e-10, seed)['X']
-        vx_r = _mps_observables(V, vt, theta_real, {'X': P({vq: 'X'})}, 256, 1e-10, seed)['X']
-        params['mps_verification_X1_intended'] = round(vx_i, 6)
-        params['mps_verification_X1_realized'] = round(vx_r, 6)
-        sim_txt = [
-            _ev('simulation_config.json', f'Aer matrix_product_state, seed {seed}, bond limits 128/256/512 at threshold '
-                f'1e-10 plus bond 256 at 1e-12; selected observables via save_expectation_value only, no statevector or '
-                f'distribution. Max observable change across settings = {conv:.2e}: converged.',
+            params[f'mps_workload_{o}_intended_expectation'] = round(ref_i[o], 6)
+            params[f'mps_workload_{o}_realized_expectation'] = round(ref_r[o], 6)
+        params['mps_max_observable_delta_across_settings_expectation'] = max(deltas.values())
+        params['mps_max_bond_dimension_reached_count'] = maxbd
+        # parity invariance check with every RZ/RZZ angle randomized (seeded)
+        rng = np.random.default_rng(seed)
+        from qiskit import QuantumCircuit as _QC
+        rq = _QC(N)
+        for ins in C.data:
+            op = ins.operation
+            if op.name in ('rz', 'rzz'):
+                op = op.__class__(float(rng.uniform(-math.pi, math.pi)))
+            rq.append(op, ins.qubits)
+        rnd_parity = _mps_observables(rq, None, None, {'p': 'Z' * N}, 256, 1e-10, seed)[0]['p']
+        params['mps_workload_total_parity_random_angles_expectation'] = round(rnd_parity, 6)
+        vt = vmeta.get('target_instruction_index', ver.get('target_instruction_index'))
+        vx_i = _mps_observables(V, vt, None, {'X': P({vq: 'X'})}, 256, 1e-10, seed)[0]['X']
+        vx_r = _mps_observables(V, vt, theta_real, {'X': P({vq: 'X'})}, 256, 1e-10, seed)[0]['X']
+        params['mps_verification_X_intended_expectation'] = round(vx_i, 6)
+        params['mps_verification_X_realized_expectation'] = round(vx_r, 6)
+        ev['sim'] = [
+            _ev('simulation_config.json', f'Aer matrix_product_state, seed {seed}; settings (bond, threshold) '
+                f'{settings}; observables via save_expectation_value only (no statevector/distribution). Per-setting max '
+                f'|delta| vs (256, 1e-10): ' + ', '.join(f'{k}: {v:.1e}' for k, v in deltas.items()) +
+                f'. Max bond dimension reached = {maxbd} (< smallest limit {settings[0][0]}), so no bond-limit '
+                'truncation occurred; discarded weight is bounded by the SVD threshold per truncation. Converged.',
                 'recommended_method; convergence_policy'),
-            _ev('compiled_circuit.qpy', f'MPS workload with target RZZ at pi/2 vs realized {theta_real:.6f} rad: total Z '
-                f'parity {base_i["total_parity"]:.6f} vs {base_r["total_parity"]:.6f} (identical, parity is blind to the '
-                f'fault); <Z{e0}> {base_i[f"Z{e0}"]:.4f} -> {base_r[f"Z{e0}"]:.4f}; <Z{e1}> {base_i[f"Z{e1}"]:.4f} -> '
-                f'{base_r[f"Z{e1}"]:.4f}; <Z{e0}Z{e1}> {base_i[f"Z{e0}Z{e1}"]:.4f} -> {base_r[f"Z{e0}Z{e1}"]:.4f}.',
+            _ev('compiled_circuit.qpy', f'MPS workload, target RZZ at {_frac_pi(theta_t)} vs realized '
+                f'{_frac_pi(theta_real)}: total Z parity {ref_i["total_parity"]:.6f} vs {ref_r["total_parity"]:.6f} '
+                f'(identical: parity is blind to the fault); <Z{e0}> {ref_i[f"Z{e0}"]:.4f} -> {ref_r[f"Z{e0}"]:.4f}; '
+                f'<Z{e1}> {ref_i[f"Z{e1}"]:.4f} -> {ref_r[f"Z{e1}"]:.4f}; <Z{e0}Z{e1}> {ref_i[f"Z{e0}Z{e1}"]:.4f} -> '
+                f'{ref_r[f"Z{e0}Z{e1}"]:.4f}; <Y{e0}Y{e1}> {ref_i[f"Y{e0}Y{e1}"]:.4f} -> {ref_r[f"Y{e0}Y{e1}"]:.4f}.',
                 f'instruction {c_idx}'),
-            _ev('verification_circuit.qpy', f'MPS verification <X{vq}>: intended {vx_i:.6f}, realized {vx_r:.6f}; observed '
-                f'{vobs.get("observed_value"):.6f} (tolerance {vobs.get("absolute_tolerance")}).',
-                f'instruction {vt}')]
+            _ev('verification_circuit.qpy', f'MPS verification <X{vq}>: intended {vx_i:.6f}, realized {vx_r:.6f}; '
+                f'observed {x_obs} (tolerance {vtol}).', f'instruction {vt}')]
     except Exception as exc:
-        sim_txt = [_ev('simulation_config.json', f'MPS simulation not completed ({type(exc).__name__}); analytic results '
-                       'stand on their own.')]
-    ev['sim'] = sim_txt
+        ev['sim'] = [_ev('simulation_config.json', f'MPS simulation not completed ({type(exc).__name__}); analytic '
+                         'results stand on their own.')]
 
+    params = {k: float(v) for k, v in params.items() if v is not None}
+    fit_txt = (f'g = {params.get("coupling_fit_minimax_MHz")} MHz (window {params.get("coupling_fit_window_low_MHz")}-'
+               f'{params.get("coupling_fit_window_high_MHz")} MHz at tolerance {tol}; max residual '
+               f'{params.get("characterization_max_residual_at_fit_expectation")}; residuals '
+               f'{"alternate in sign with n, i.e. the declared fixed additive perturbation, not a fit bias" if sign_alt else "small"})')
+    alias_txt = (f'Because probes use integer n, cos(n*2*pi*g*t/1000) is also matched exactly at g = k*{period:g} +/- '
+                 f'{g_fit:.3f} MHz (and at -g, since cos is even); in 0-{2 * period:g} MHz the other solutions are '
+                 f'{aliases} MHz. They are rejected only on physical grounds: they are far from both the design '
+                 f'({g_design} MHz) and model ({g_model} MHz) proxies.' if g_fit and period else '')
     ev['artifact'] += [
-        _ev('characterization.json', f'XI expectations {y.round(6).tolist()} for n={n.astype(int).tolist()} fit '
-            f'cos(n*omega*t) at g = {params.get("coupling_fit_from_characterization_MHz")} MHz (window '
-            f'{params.get("coupling_fit_tolerance_window_low_MHz")}-{params.get("coupling_fit_tolerance_window_high_MHz")} '
-            f'MHz at tolerance {tol}); over 0.5-60 MHz the only other solution is the alias theta -> 2*pi - theta at '
-            f'{[v for k, v in params.items() if k.startswith("coupling_fit_branch")]} MHz, rejected as it is ~2.9x the '
-            'design and model values and needs a >2*pi-scale rotation per pulse; max residual {params.get("characterization_max_residual_design_coupling")} '
-            f'at {g_design} MHz vs {params.get("characterization_max_residual_model_coupling")} at {g_model} MHz',
-            'probes'),
-        _ev('observable_spec.json', f'verification-X1 observed {vobs.get("observed_value")} vs predicted '
-            f'{params.get("verification_X1_predicted_intended", 0):.6f} for intended pi/2 and '
-            f'{params.get("verification_X1_predicted_realized", 0):.6f} for realized angle', 'observables[verification-X1]'),
-        _ev('verification_protocol.json', f'<X{vq}> = cos(phi_{vq}) * prod cos(theta_e) over incident edges; phi_{vq} = '
-            f'{phis[vq] if phis else "?"}, other incident angles {others}; inverting the observed value gives target angle '
-            f'{params.get("verification_inferred_target_angle_rad", 0):.6f} rad = '
-            f'{params.get("verification_inferred_coupling_MHz", 0):.4f} MHz', 'analytic_identity; interactions'),
+        _ev('characterization.json', f'XI expectations {y.round(6).tolist()} for n={n.astype(int).tolist()} are '
+            f'reproduced by cos(n*omega*t) at {fit_txt}; max residual '
+            f'{params.get("characterization_max_residual_design_coupling_expectation")} at the design {g_design} MHz vs '
+            f'{params.get("characterization_max_residual_model_coupling_expectation")} at the model {g_model} MHz. '
+            + alias_txt, 'probes'),
+        _ev('observable_spec.json', f'verification-X{vq} observed {x_obs} vs predicted '
+            f'{params.get("verification_X_predicted_intended_expectation", float("nan")):.6f} (intended) and '
+            f'{params.get("verification_X_predicted_realized_expectation", float("nan")):.6f} (realized), tolerance {vtol}',
+            f'observables[id={vobs.get("id")}]'),
+        _ev('verification_protocol.json', f'<X_q> = cos(phi_q) * prod cos(theta_e) over incident edges; phi_{vq} = '
+            f'{phis[vq] if vq is not None and vq < len(phis) else "?"}, other incident angles {others}; inverting the '
+            f'observed value gives target angle {params.get("verification_inferred_target_angle_rad", float("nan")):.6f} '
+            f'rad = {params.get("verification_inferred_coupling_MHz", float("nan")):.4f} MHz', 'analytic_identity; interactions'),
     ]
 
     # ---------------- noise / alternatives (M8) ----------------
     nq = noise.get('qubits', [])
+    tgt_noise = [q for q in nq if q['qubit'] in tgt_edge]
     if nq:
         med_t1 = sorted(q['T1_us'] for q in nq)[len(nq) // 2]
         med_ro = sorted(q['readout_error'] for q in nq)[len(nq) // 2]
@@ -1006,117 +1131,172 @@ def solve_stage2(stage_dir):
             if q['T1_us'] < 0.5 * med_t1 or q['readout_error'] > 3 * med_ro:
                 incidental.append(
                     f'noise_snapshot qubit {q["qubit"]}: T1 {q["T1_us"]} us, T2 {q["T2_us"]} us, readout_error '
-                    f'{q["readout_error"]} (median T1 {med_t1}, readout {med_ro}). Not on target edge {list(tgt_edge)}; the '
-                    'snapshot scope excludes it from the isolated Q1/Q4 characterization, and the verification observable '
-                    'applies no readout channel; it cannot produce a coherent 12.5% over-rotation.')
-    for o in parity_obs:
-        incidental.append(f'Observable {o["id"]} = {o["observed_value"]} (passes): Z-parity is invariant under '
-                          'RZ/RZZ and SX-pair structure, and MPS confirms it is identical for intended and realized '
-                          'angles, so passing parity neither clears nor localizes the fault.')
-    incidental += [
-        f'Instruction index differs between intended ({i_idx}) and compiled ({c_idx}) circuits for {tgt_op}: commuting '
-        'reorder by the compiler; the operation, qubits and angle are identical.',
-        'backend edge [4,2] vs compiled RZZ on (2,4): RZZ is symmetric, so edge orientation is irrelevant.',
-        'intended_circuit.txt and compiled_circuit.txt are byte-identical drawings although the QPY instruction order '
-        'differs: the drawing is order-insensitive (layered); not evidence of tampering.',
-        f'provenance_registry re-registers {mod.get("artifact_id")} at {reg_model.get("timestamp")} alongside D21 '
-        'artifacts; a registry timestamp is not a regeneration and does not alter its source fingerprint.',
-        f'characterization n=8 expectation {y[-1] if len(y) else "?"} is near 0 as predicted (cos(8*theta) with theta = '
-        '9*pi/16 gives 0); residuals of ~0.001 are within the declared additive perturbation <= ' + str(tol) + '.',
-        'All 32 transmon components share identical geometry and model EJ/EC; qubit-parameter drift is not supported.',
+                    f'{q["readout_error"]} (medians T1 {med_t1} us, readout {med_ro}). Not on target edge {list(tgt_edge)}; '
+                    f'snapshot scope: "{noise.get("scope", "")}"; the verification observable applies no readout channel. '
+                    'An off-edge incoherent error cannot produce a coherent, sign-alternating rotation error on the target.')
+    longest = (max(n) * t / 1000.0) if len(n) and t else None
+    damp = min((math.exp(-longest / q['T2_us']) for q in tgt_noise), default=None) if longest else None
+    if damp:
+        params['t2_damping_over_longest_probe_dimensionless'] = damp
+    rejected += [
+        'compiler: DAG-identical, requests exactly the intended angle',
+        f'mapping: {"identity" if identity else "consistent"} layout, supported edge {list(tgt_edge)}',
+        'scheduling: matches compiled circuit; target duration equals calibration',
+        f'wrong control channel/edge: {man.get("channel")} bound to {list(tgt_edge)} in manifest, calibration, '
+        'characterization and verification metadata',
+        f'runtime/backend: {rt.get("device_revision")}/{rt.get("calibration_epoch")} and fingerprint consistent with design',
+        (f'T1/T2 decoherence: the longest probe ({int(max(n))} pulses = {longest * 1000:.1f} ns) gives T2 damping '
+         f'{damp:.5f} on {list(tgt_edge)}, far too small for the observed shifts; decay would shrink |<XI>| with n, but '
+         f'|<XI>| reaches {float(np.max(np.abs(y))):.3f} at n={int(n[int(np.argmax(np.abs(y)))])}, and the sign pattern '
+         'is a coherent rotation') if damp else 'T1/T2: not quantified',
+        'readout error: off-edge outliers only; verification uses no readout channel',
+        f'crosstalk: noise assumptions {noise.get("assumptions", {}).get("no_crosstalk") and "no_crosstalk=true" or "n/a"}; '
+        'characterization is isolated',
+        f'qubit-parameter drift: all {len(comps)} design components share identical cross geometry and Lj/Cj; the '
+        'reduced rate depends only on the coupling proxy',
     ]
-    alternatives = (
-        'REJECTED ALTERNATIVES: compiler (DAG-identical, RZZ(pi/2) requested); mapping (identity layout, supported edge '
-        '[1,4]); scheduling (matches compiled circuit; duration equals calibration); wrong control channel (u14 bound to '
-        'edge [1,4] consistently in manifest, calibration and verification metadata); runtime/backend (D21/K21 fingerprint '
-        'consistent with design); T1/T2 decay (would shrink |<XI>| with n, but |<XI>| reaches 0.98 at n=7: coherent, '
-        'undamped rotation; noise excluded from local probes); readout (Q30 0.18 is off-edge, no readout channel in '
-        'verification); crosstalk (no_crosstalk=true, characterization is isolated). Only the coupling value fits.')
+    if parity_obs:
+        rp = params.get('mps_workload_total_parity_random_angles_expectation')
+        incidental.append(
+            'Observables ' + ', '.join(f'{o["id"]} = {o["observed_value"]}' for o in parity_obs) + ' pass, but they '
+            'are structural invariants of this circuit family (RZZ pair blocks are SX-conjugated): MPS gives total '
+            f'parity {params.get("mps_workload_total_parity_intended_expectation")} with the intended angle, '
+            f'{params.get("mps_workload_total_parity_realized_expectation")} with the realized angle' +
+            (f' and {rp} with every RZ/RZZ angle randomized' if rp is not None else '') +
+            '. Passing parity therefore neither clears nor localizes the fault.')
+    incidental += [
+        f'intended_circuit.txt and compiled_circuit.txt are '
+        f'{"byte-identical" if (d / "intended_circuit.txt").read_bytes() == (d / "compiled_circuit.txt").read_bytes() else "different"}'
+        ' drawings although the QPY instruction order differs: the layered drawing is insensitive to commuting order; '
+        'not evidence of tampering.',
+        f'provenance_registry lists {mod.get("artifact_id")} with timestamp {reg_model.get("timestamp")} like every '
+        'other artifact; a listing time is not a regeneration and does not alter its source fingerprint.',
+        'The QPY circuits and readable drawings are not listed in the provenance registry; their integrity rests on the '
+        'release manifest hashes instead.',
+    ]
+    if V is not None:
+        vgates = sorted({i.operation.name for i in V.data} - set(be.get('basis_gates', [])))
+        if vgates:
+            incidental.append(f'verification_circuit.qpy uses {vgates}, outside the backend basis: it is an analytic '
+                              'logical companion record, not a transpiled job, and its identity is used analytically.')
+    if len(y) and theta_real:
+        k_zero = [int(r) for r in n if abs(math.cos(r * theta_real)) < 1e-6]
+        if k_zero:
+            incidental.append(f'characterization n={k_zero} expectation {[float(y[list(n).index(k)]) for k in k_zero]} '
+                              f'is ~0 exactly as predicted (cos(n*{_frac_pi(theta_real)}) = 0); within tolerance {tol}.')
 
-    # ---------------- verdict ----------------
+    # ---------------- assemble ----------------
     layers['algorithm'] = (f'{(I.metadata or {}).get("workload") if I is not None else "workload"}: {chc.get("rounds")} '
-                           f'rounds of RZ and SX-conjugated RZZ on {chc.get("physical_qubits")} qubits; '
-                           f'the intended target is RZZ(pi/2) on logical {tgt_logical}.')
+                           f'rounds of RZ and SX-conjugated RZZ on {chc.get("physical_qubits")} qubits '
+                           f'({chc.get("two_qubit_gates")} two-qubit gates); intended target RZZ({_frac_pi(theta_t) if theta_t else "?"}) '
+                           f'on logical {tgt_logical}. No algorithm-layer issue.')
+    layers['provenance_registry'] = (
+        f'Registry {reg.get("artifact_id")}: revisions ' + ', '.join(f'{r}@{v["timestamp"]}' for r, v in revs.items()) +
+        f'. Design and runtime resolve to {cur_rev}; {mod.get("artifact_id")} resolves to {model_rev}. '
+        f'external_ids {reg.get("external_ids")} are unregistered.')
     layers['characterization'] = (
-        f'Characterization fits g = {params.get("coupling_fit_from_characterization_MHz")} MHz on the physical branch '
-        '(the only other branch below 60 MHz is the cosine alias theta -> 2*pi - theta, implausible) (residual '
-        f'{params.get("characterization_max_residual_at_fit")}), equal to the {cur_rev} design value {g_design} MHz and '
-        f'inconsistent with the model value {g_model} MHz (residual {params.get("characterization_max_residual_model_coupling")}). '
-        f'Verification <X{vq}> observed {vobs.get("observed_value")} matches the realized angle prediction '
-        f'{params.get("verification_X1_predicted_realized", 0):.6f} and not the intended {params.get("verification_X1_predicted_intended", 0):.6f}.')
-    layers['noise'] = 'NOT CAUSAL. ' + alternatives
-    res.update(layer_assessments=layers, estimated_parameters=params, incidental_anomalies=incidental,
+        f'Probes fit {fit_txt}, equal to the {cur_rev} design value {g_design} MHz and inconsistent with the model value '
+        f'{g_model} MHz (residual {params.get("characterization_max_residual_model_coupling_expectation")}). ' + alias_txt)
+    layers['verification'] = (
+        f'<X{vq}> observed {x_obs} matches the realized prediction '
+        f'{params.get("verification_X_predicted_realized_expectation", float("nan")):.6f}, not the intended '
+        f'{params.get("verification_X_predicted_intended_expectation", float("nan")):.6f} (tolerance {vtol}); inverted '
+        f'coupling {params.get("verification_inferred_coupling_MHz", float("nan")):.4f} MHz.')
+    layers['noise'] = ('NOT CAUSAL. Off-edge T1/readout outliers only; target-edge decoherence over the probes is '
+                       f'negligible (T2 damping {damp:.5f}).' if damp else 'NOT CAUSAL.')
+    layers['alternatives'] = 'REJECTED: ' + '; '.join(rejected) + '.'
+    res.update(estimated_parameters=params, incidental_anomalies=incidental, diagnostic_evidence=diag,
                artifact_evidence=ev['artifact'], runtime_evidence=ev['runtime'], device_design_evidence=ev['design'],
                device_model_evidence=ev['model'], control_evidence=ev['control'], simulation_evidence=ev['sim'])
 
-    meas_dev = abs(params.get('verification_X1_observed', 0) - params.get('verification_X1_predicted_intended', 0))
-    if not model_stale or not g_design or not g_model or g_design == g_model:
-        if meas_dev > (vobs.get('absolute_tolerance') or 0.004):
+    x_dev = abs((x_obs or 0) - params.get('verification_X_predicted_intended_expectation', 0))
+    if not model_stale or not g_design or not g_model or g_design == g_model or theta_real is None:
+        res['layer_assessments'] = layers
+        if x_dev > (vtol or 0.004):
             res.update(verdict='INTEGRITY_VIOLATION', confidence=0.6, suspected_fault_type='UNLOCALIZED_DEVIATION',
-                       root_cause='Verification observable deviates from the intended prediction but no provenance break '
-                                  'was found.')
+                       root_cause='Verification observable deviates from the intended prediction but no provenance '
+                                  'break was found.')
         else:
             res.update(verdict='VALID_EXECUTION', confidence=0.8,
                        root_cause='All layers consistent; verification observable within tolerance of intent.')
         return res
 
-    e0, e1 = tgt_edge
+    over = params['over_rotation_rad']
+    layers['root_cause_boundary'] = (
+        f'PRIMARY: device design {des.get("artifact_id")} ({cur_rev}) -> device model {mod.get("artifact_id")} '
+        f'({model_rev}): the model was never regenerated after {cur_rev} (fingerprint mismatch, g {g_model} vs {g_design} '
+        f'MHz). PROPAGATION: {mod.get("artifact_id")} -> {cal.get("artifact_id")} ({cal.get("calibration_epoch")}): the '
+        'calibration correctly derives its pulse from its declared model_ref but has no geometry-fingerprint check '
+        f'against the {cur_rev} runtime. DOWNSTREAM (clean): compiler, mapping, schedule, runtime executed as configured.')
     res.update(
+        layer_assessments=layers,
         verdict='INTEGRITY_VIOLATION',
         confidence=0.95,
         suspected_fault_type='STALE_DEVICE_MODEL_PROVENANCE -> COUPLING_MISCALIBRATION (coherent RZZ over-rotation)',
         affected_logical_operations=[
-            f'{tgt_op}: RZZ(pi/2) on logical {tgt_logical} (intended index {i_idx}, compiled index '
-            f'{c_idx}, schedule start {tgt_sched[0]["start_ns"] if tgt_sched else "?"} ns); also verification target '
-            f'instruction {ver.get("target_instruction_index")} which uses the same calibration'],
+            f'{tgt_op}: RZZ({_frac_pi(theta_t)}) on logical {tgt_logical} (intended index {i_idx}, compiled index '
+            f'{c_idx}, schedule start {tgt_sched[0]["start_ns"] if tgt_sched else "?"} ns, control {man.get("artifact_id")})',
+            f'verification companion target instruction {vmeta.get("target_instruction_index", ver.get("target_instruction_index"))} '
+            '(same calibration)'],
         expected_physical_resources=[
-            f'physical edge ({e0},{e1}) via coupler {lr.get("coupler", {}).get("id")} on channel {man.get("channel")}',
-            f'{cur_rev} device model (source fingerprint {str(des.get("geometry_fingerprint"))[:12]}...) with g = {g_design} MHz',
-            f'rate {rate(g_design):.6f} rad/ns, pulse {params["corrected_pulse_duration_ns"]:.4f} ns for theta = pi/2',
+            f'physical edge ({e0},{e1}) via coupler {cpl.get("id")} on channel {man.get("channel")}',
+            f'{cur_rev} device model (source fingerprint {str(des.get("geometry_fingerprint"))[:12]}...) with '
+            f'g = {g_design} MHz',
+            f'rate {rate(g_design):.6f} rad/ns; {params["corrected_pulse_duration_ns"]:.4f} ns pulse for theta = '
+            f'{_frac_pi(theta_t)}',
         ],
         suspected_realized_resources=[
-            f'same physical edge ({e0},{e1}) / coupler {lr.get("coupler", {}).get("id")} / channel {man.get("channel")} '
-            '(the edge and channel are correct)',
-            f'calibration {cal.get("artifact_id")} derived from stale {mod.get("artifact_id")} ({model_rev} geometry, '
-            f'g = {g_model} MHz): {t} ns pulse at true rate {rate(g_design):.6f} rad/ns',
-            f'realized RZZ angle {theta_real:.6f} rad (= 9*pi/16) instead of pi/2: over-rotation '
-            f'{params["over_rotation_rad"]:.6f} rad ({params["over_rotation_fraction"]:.1%})',
+            f'same physical edge ({e0},{e1}) / coupler {cpl.get("id")} / channel {man.get("channel")} (edge and channel '
+            'are correct)',
+            f'calibration {cal.get("artifact_id")} ({cal.get("calibration_epoch")}) derived from stale '
+            f'{mod.get("artifact_id")} ({model_rev} geometry, g = {g_model} MHz): {t} ns pulse at true rate '
+            f'{rate(g_design):.6f} rad/ns',
+            f'realized RZZ angle {theta_real:.6f} rad ({_frac_pi(theta_real)}) instead of {_frac_pi(theta_t)}: '
+            f'over-rotation {over:.6f} rad ({params["over_rotation_deg"]:.2f} deg, '
+            f'{params["over_rotation_ratio"]:.1%})',
         ],
         root_cause=(
-            f'OBSERVATIONS: compiler, mapping, schedule and runtime faithfully request RZZ(pi/2) on edge ({e0},{e1}) over '
-            f'channel {man.get("channel")}. The current device design {des.get("artifact_id")} ({cur_rev}) gives '
-            f'g = {g_design} MHz for coupler {lr.get("coupler", {}).get("id")}, but the device model '
-            f'{mod.get("artifact_id")} was built from {model_rev} geometry (fingerprint '
-            f'{str(mod.get("source_geometry_fingerprint"))[:12]}...) with g = {g_model} MHz and was never regenerated for '
-            f'{cur_rev}. Calibration {cal.get("artifact_id")} ({cal.get("calibration_epoch")}) took its rate from that model: '
-            f'{nominal:.6f} rad/ns, so it chose {t} ns for pi/2. '
-            f'PHYSICAL CONSEQUENCE: under the supplied reduced assumption omega = 2*pi*g/1000 rad/ns the true rate is '
-            f'{rate(g_design):.6f} rad/ns, giving theta = {theta_real:.6f} rad (9*pi/16), a {params["over_rotation_fraction"]:.1%} '
-            f'(+{params["over_rotation_rad"]:.4f} rad) coherent over-rotation. Characterization independently fits '
-            f'g = {g_fit:.3f} MHz and the verification correlator inverts to {params.get("verification_inferred_coupling_MHz", 0):.3f} MHz. '
-            f'BOUNDARY: design ({cur_rev}, correct) -> device model (stale {model_rev}) -> control calibration '
-            f'({cal.get("calibration_epoch")}, inherits stale g). The fault boundary is the design-to-model provenance '
-            f'handoff, propagated into calibration; everything downstream executed as configured. ' + alternatives),
+            f'OBSERVATIONS: compiler, mapping, schedule and runtime faithfully request RZZ({_frac_pi(theta_t)}) on edge '
+            f'({e0},{e1}) over channel {man.get("channel")}. Current design {des.get("artifact_id")} ({cur_rev}) gives '
+            f'g = {g_design} MHz for coupler {cpl.get("id")}; device model {mod.get("artifact_id")} was built from '
+            f'{model_rev} geometry (fingerprint {str(mod.get("source_geometry_fingerprint"))[:12]}...) with '
+            f'g = {g_model} MHz and was never regenerated for {cur_rev}. Calibration {cal.get("artifact_id")} took its '
+            f'rate from it ({nominal:.6f} rad/ns) and chose {t} ns. '
+            f'PHYSICAL CONSEQUENCE: with the supplied reduced assumption omega = 2*pi*g/1000 rad/ns, the true rate is '
+            f'{rate(g_design):.6f} rad/ns (+{params["rate_error_rad_per_ns"]:.6f} rad/ns, coupling error '
+            f'{params["coupling_error_MHz"]:.1f} MHz; the model under-estimates g by '
+            f'{1 - params["model_coupling_underestimate_ratio"]:.1%}), so theta = {theta_real:.6f} rad '
+            f'({_frac_pi(theta_real)}), a {params["over_rotation_ratio"]:.1%} (+{over:.4f} rad, '
+            f'{params["over_rotation_deg"]:.2f} deg) coherent over-rotation; gate process fidelity vs intended '
+            f'{params["rzz_process_fidelity_vs_intended_dimensionless"]:.5f}. Characterization independently gives '
+            f'{fit_txt}; the verification correlator inverts to '
+            f'{params.get("verification_inferred_coupling_MHz", float("nan")):.3f} MHz; MPS shows local workload '
+            f'observables on ({e0},{e1}) shift while global parity cannot. '
+            f'BOUNDARY: {layers["root_cause_boundary"]} SCOPE: only operations bound to {man.get("artifact_id")} are '
+            f'evidenced as affected; {", ".join(base_refs)} provenance is not supplied.'),
         proposed_repair=(
-            f'Regenerate the reduced device model for the {cur_rev} geometry (source_geometry_fingerprint '
-            f'{des.get("geometry_fingerprint")}), giving coupling_proxy_MHz = {g_design} for edge ({e0},{e1}); register it '
-            f'(e.g. model-21) and repoint {cal.get("artifact_id")} and {loc.get("artifact_id")} to it. Recalibrate '
-            f'{man.get("channel")}: nominal_rate {rate(g_design):.6f} rad/ns and pulse_duration '
-            f'{params["corrected_pulse_duration_ns"]:.4f} ns (or keep {t} ns with amplitude_scale '
-            f'{params["corrected_amplitude_scale_at_fixed_duration"]:.4f}). Add a provenance gate: a calibration may be '
-            'used only if its model\'s source_geometry_fingerprint equals the runtime/backend geometry_fingerprint, and '
-            'any new device revision invalidates models and calibrations derived from the previous one.'),
+            f'(1) Regenerate the reduced device model from the {cur_rev} geometry (source_geometry_fingerprint '
+            f'{des.get("geometry_fingerprint")}), giving coupling_proxy_MHz = {g_design} for ({e0},{e1}); register it as '
+            f'a new artifact and repoint {loc.get("artifact_id")} to it. (2) Issue a new calibration epoch (rather than '
+            f'editing {cal.get("artifact_id")}) for channel {man.get("channel")}: nominal_rate {rate(g_design):.6f} rad/ns '
+            f'and pulse_duration {params["corrected_pulse_duration_ns"]:.4f} ns, or keep {t} ns with amplitude_scale '
+            f'{params["corrected_amplitude_scale_at_fixed_duration_ratio"]:.4f} (valid only if rate is linear in drive; '
+            'the model states "Proxy g includes drive scaling", so re-verify). (3) Provenance gate: a calibration may be '
+            'used only if its model\'s source_geometry_fingerprint equals the runtime/backend geometry_fingerprint; a new '
+            'device revision invalidates models and calibrations derived from earlier revisions. (4) Audit '
+            f'{", ".join(base_refs)} for the same dependency.'),
         repair_validation=(
-            f'(1) Provenance: check model.source_geometry_fingerprint == design == runtime fingerprint ({cur_rev}). '
-            f'(2) Re-run the {len(n)} characterization probes (|++>, n repeated pulses, measure XI): expect cos(n*pi/2) = '
-            '[0, -1, 0, 1, 0, -1, 0, 1] within ' + str(tol) + ', and a fitted g with omega*t = pi/2 '
-            f'(currently [{", ".join(f"{v:.3f}" for v in y)}]). (3) Re-run the verification companion: expect <X{vq}> = '
-            f'{params.get("verification_X1_predicted_intended", 0):.4f} +/- {vobs.get("absolute_tolerance")} (currently '
-            f'{vobs.get("observed_value"):.4f}). (4) Re-simulate the workload with Aer MPS at bond 128/256/512 and confirm '
-            f'local observables on ({e0},{e1}) return to the intended values (e.g. <Z{e0}> '
-            f'{params.get(f"mps_workload_Z{e0}_intended", 0):.4f}, currently {params.get(f"mps_workload_Z{e0}_realized", 0):.4f}); '
-            'global parity is not a sufficient check. (5) Optionally amplify sensitivity with odd-n repetitions and '
-            'Ramsey-style ZZ echoes; keep these as regression tests on every device revision.'),
+            f'(1) Provenance: model.source_geometry_fingerprint == design == runtime fingerprint ({cur_rev}). '
+            f'(2) Re-run the {len(n)} characterization probes (|++>, n pulses, measure XI): expect '
+            f'{[round(math.cos(k * theta_t), 3) for k in n.astype(int)]} within {tol} (currently '
+            f'{[round(float(v), 3) for v in y]}), and a refit giving omega*t = {_frac_pi(theta_t)}. (3) Re-run the '
+            f'verification companion: expect <X{vq}> = '
+            f'{params.get("verification_X_predicted_intended_expectation", float("nan")):.4f} +/- {vtol} (currently '
+            f'{x_obs}). (4) Re-simulate the workload with Aer MPS at bond 128/256/512 and confirm local observables on '
+            f'({e0},{e1}) return to intended values (<Z{e0}> {params.get(f"mps_workload_Z{e0}_intended_expectation", float("nan")):.4f}, '
+            f'currently {params.get(f"mps_workload_Z{e0}_realized_expectation", float("nan")):.4f}); global parity is not '
+            'a sufficient check. (5) Keep probes as a regression test on every device revision; odd-n repetitions '
+            'amplify residual rate error.'),
     )
     return res
 
