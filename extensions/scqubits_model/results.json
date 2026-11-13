@@ -1,4 +1,10 @@
 {
+  "versions": {
+    "python": "3.13.18",
+    "scqubits": "4.3.1",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
   "model_id": "model-20",
   "model_source_revision": "D20",
   "design_revision": "D21",
@@ -23,27 +29,148 @@
   "ncut_convergence_f01_delta_MHz": 1.1368683772161603e-10,
   "coupled": {
     "model20_g16": {
-      "G_charge_coupling_GHz": 0.010680862576287265,
-      "bare_detuning_MHz": 66.32903406915247,
-      "dressed_01_10_splitting_MHz": 73.64475683034932,
-      "exchange_g_from_splitting_MHz": 16.000073812755474,
-      "static_ZZ_kHz": 3561.2940568378813
+      "charge_coupling_G_GHz": 0.01068086257628726,
+      "hilbertspace": {
+        "dressed_01_10_splitting_MHz": 73.64475683036886,
+        "static_ZZ_MHz": 3.5612940568370277,
+        "bare_detuning_MHz": 66.32903406915247
+      },
+      "explicit_3_levels": {
+        "dressed_01_10_splitting_MHz": 73.644756830344,
+        "static_ZZ_MHz": 3.5612940568370277,
+        "bare_detuning_MHz": 66.32903406915247
+      },
+      "explicit_6_levels": {
+        "dressed_01_10_splitting_MHz": 73.6447627972403,
+        "static_ZZ_MHz": 3.560321740273764,
+        "bare_detuning_MHz": 66.32903406915247
+      },
+      "dressed_state_max_overlaps": {
+        "01": 0.9503279079539848,
+        "10": 0.9503279057739551,
+        "11": 0.9866187625644388
+      },
+      "static_ZZ_perturbative_MHz": 3.866265195049033,
+      "g_over_detuning": 0.2412216644572108
     },
     "design21_g18": {
-      "G_charge_coupling_GHz": 0.012015970398323172,
-      "bare_detuning_MHz": 66.32903406915247,
-      "dressed_01_10_splitting_MHz": 75.46889990970573,
-      "exchange_g_from_splitting_MHz": 18.000097868028334,
-      "static_ZZ_kHz": 4491.626897211292
-    },
-    "design21_g18_6levels": {
-      "G_charge_coupling_GHz": 0.012015970398323169,
-      "bare_detuning_MHz": 66.32903406915247,
-      "dressed_01_10_splitting_MHz": 75.46890950263307,
-      "exchange_g_from_splitting_MHz": 18.00010792307807,
-      "static_ZZ_kHz": 4490.150110606402
+      "charge_coupling_G_GHz": 0.012015970398323167,
+      "hilbertspace": {
+        "dressed_01_10_splitting_MHz": 75.46889990969774,
+        "static_ZZ_MHz": 4.491626897213052,
+        "bare_detuning_MHz": 66.32903406915247
+      },
+      "explicit_3_levels": {
+        "dressed_01_10_splitting_MHz": 75.46889990968708,
+        "static_ZZ_MHz": 4.491626897220158,
+        "bare_detuning_MHz": 66.32903406915247
+      },
+      "explicit_6_levels": {
+        "dressed_01_10_splitting_MHz": 75.46890950264995,
+        "static_ZZ_MHz": 4.490150110605384,
+        "bare_detuning_MHz": 66.32903406915247
+      },
+      "dressed_state_max_overlaps": {
+        "01": 0.9394422723777184,
+        "10": 0.9394422685237577,
+        "11": 0.9832436139174937
+      },
+      "static_ZZ_perturbative_MHz": 4.893241887483932,
+      "g_over_detuning": 0.27137437251436214
     }
   },
+  "coupled_note": "G is chosen so that the bare exchange G*|n01|*|n01| equals the proxy, so the dressed splitting sqrt(det^2 + 4 g^2) reproduces the proxy by construction (consistency check, not an independent extraction). Static ZZ of several MHz follows because g/detuning ~ 0.25; that is outside the supplied reduced model, which states \"Proxy g includes drive scaling\" and treats only the driven entangling rate.",
+  "mechanism_test": {
+    "linear_proxy_angle_rad": 1.7671458676442586,
+    "linear_proxy_max_residual": 0.001000000488713182,
+    "g_squared_scaling_angle_rad": 1.9880391010997909,
+    "g_squared_scaling_max_residual": 1.1868909634806448,
+    "g_squared_scaling_XI_n1": -0.40524131400498975,
+    "static_ZZ_only_angle_per_pulse_rad": 0.2204822197336069,
+    "static_ZZ_only_max_residual": 1.829219982678492,
+    "tolerance": 0.004,
+    "conclusion": "Only the supplied linear proxy (omega = 2*pi*g/1000 with g = 18 MHz) reproduces the probes within tolerance; a rate scaling as g^2 or the bare static ZZ do not."
+  },
+  "g_sweep": [
+    {
+      "g_MHz": 14.0,
+      "linear_angle_rad": 1.3744467859455345,
+      "max_residual": 1.9625705604032306,
+      "static_ZZ_MHz": 2.7350744545842076
+    },
+    {
+      "g_MHz": 14.5,
+      "linear_angle_rad": 1.423534171157875,
+      "max_residual": 1.8395138900002714,
+      "static_ZZ_MHz": 2.9317601130998128
+    },
+    {
+      "g_MHz": 15.0,
+      "linear_angle_rad": 1.4726215563702154,
+      "max_residual": 1.6161785641636466,
+      "static_ZZ_MHz": 3.135045211159593
+    },
+    {
+      "g_MHz": 15.5,
+      "linear_angle_rad": 1.521708941582556,
+      "max_residual": 1.318675133392221,
+      "static_ZZ_MHz": 3.3449000233787274
+    },
+    {
+      "g_MHz": 16.0,
+      "linear_angle_rad": 1.5707963267948966,
+      "max_residual": 1.001,
+      "static_ZZ_MHz": 3.5612940568370277
+    },
+    {
+      "g_MHz": 16.5,
+      "linear_angle_rad": 1.6198837120072371,
+      "max_residual": 0.9248795325112867,
+      "static_ZZ_MHz": 3.7841960730915503
+    },
+    {
+      "g_MHz": 17.0,
+      "linear_angle_rad": 1.6689710972195777,
+      "max_residual": 0.7081067811865472,
+      "static_ZZ_MHz": 4.013574109130502
+    },
+    {
+      "g_MHz": 17.5,
+      "linear_angle_rad": 1.718058482431918,
+      "max_residual": 0.38368343236509067,
+      "static_ZZ_MHz": 4.249395499371644
+    },
+    {
+      "g_MHz": 18.0,
+      "linear_angle_rad": 1.7671458676442586,
+      "max_residual": 0.001000000488713182,
+      "static_ZZ_MHz": 4.491626897220158
+    },
+    {
+      "g_MHz": 18.5,
+      "linear_angle_rad": 1.8162332528565992,
+      "max_residual": 0.38168343236508967,
+      "static_ZZ_MHz": 4.740234297514689
+    },
+    {
+      "g_MHz": 19.0,
+      "linear_angle_rad": 1.8653206380689396,
+      "max_residual": 0.7061067811865465,
+      "static_ZZ_MHz": 4.9951830585186485
+    },
+    {
+      "g_MHz": 19.5,
+      "linear_angle_rad": 1.9144080232812801,
+      "max_residual": 0.9228795325112864,
+      "static_ZZ_MHz": 5.256437924344937
+    },
+    {
+      "g_MHz": 20.0,
+      "linear_angle_rad": 1.963495408493621,
+      "max_residual": 1.0907902131865477,
+      "static_ZZ_MHz": 5.523963047394886
+    }
+  ],
   "reduced_rate": {
     "assumption": "Effective entangling angular rate is 2*pi*g_MHz/1000 rad/ns. Proxy g includes drive scaling. This is a supplied effective model, not a claimed ab initio transmon extraction. U(theta)=exp(-i theta ZZ/2); SX basis changes realize YY pair blocks.",
     "omega_model20_rad_per_ns": 0.10053096491487339,
@@ -74,20 +201,21 @@
       77.4809172986365,
       74.50088201791971
     ],
-    "design21_junction_Cj_fF": [
-      2.0,
-      2.0
-    ],
-    "note": "EC depends on total island capacitance (cross + gap + junction), which needs an EM extraction not supplied; only the junction Cj is given, so EC is not cross-checked.",
     "f01_if_EJ_from_D21_Lj_GHz": [
       5.4552856085129005,
       5.5577273057319445
-    ]
+    ],
+    "caveat": "model-20 describes itself as \"a supplied effective model, not a claimed ab initio transmon extraction\"; the D20 geometry is not supplied, and no frequency data exist to test either EJ. The mismatch is consistent with model-20 not being derived from D21; it is not proof.",
+    "B1_electrostatic_EC_GHz_range": [
+      0.1925664757152834,
+      0.24869086951236669
+    ],
+    "B1_EC_consistent_with_model20_EC": true
   },
   "proposed_model_record": {
     "artifact_id": "model-21-candidate",
     "source_geometry_fingerprint": "74a51d718cc33d6f422f4ffd3633011bf2890fb066bb200d4afa81e5f6f08c0e",
-    "created_at": "2026-07-01T09:00:00Z",
+    "created_at": null,
     "model_kind": "two weakly anharmonic transmons; reduced exchange proxy",
     "qubits": [
       1,
@@ -116,6 +244,6 @@
     },
     "reduced_assumption": "Effective entangling angular rate is 2*pi*g_MHz/1000 rad/ns. Proxy g includes drive scaling. This is a supplied effective model, not a claimed ab initio transmon extraction. U(theta)=exp(-i theta ZZ/2); SX basis changes realize YY pair blocks.",
     "created_by": "extensions/scqubits_model/reconstruct_model.py",
-    "notes": "Coupling proxy taken from design-21 local_region; transmon EJ/EC retained from model-20 pending an EM capacitance extraction and junction characterization for D21 (see design_cross_check)."
+    "notes": "Coupling proxy from design-21 local_region. Transmon EJ/EC retained from model-20 pending D21 junction characterization and EM capacitance extraction (see design_cross_check). created_at left null: to be set when registered."
   }
 }

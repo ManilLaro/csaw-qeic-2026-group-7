@@ -1,97 +1,61 @@
 {
-  "metal_version": "0.9.0",
-  "design_revision": "D21",
-  "components_built": 33,
-  "qubits_built": 32,
-  "geometry_ids_required": [
-    "geom-C14",
-    "geom-Q0",
-    "geom-Q1",
-    "geom-Q10",
-    "geom-Q11",
-    "geom-Q12",
-    "geom-Q13",
-    "geom-Q14",
-    "geom-Q15",
-    "geom-Q16",
-    "geom-Q17",
-    "geom-Q18",
-    "geom-Q19",
-    "geom-Q2",
-    "geom-Q20",
-    "geom-Q21",
-    "geom-Q22",
-    "geom-Q23",
-    "geom-Q24",
-    "geom-Q25",
-    "geom-Q26",
-    "geom-Q27",
-    "geom-Q28",
-    "geom-Q29",
-    "geom-Q3",
-    "geom-Q30",
-    "geom-Q31",
-    "geom-Q4",
-    "geom-Q5",
-    "geom-Q6",
-    "geom-Q7",
-    "geom-Q8",
-    "geom-Q9"
-  ],
-  "geometry_ids_missing": [],
-  "physical_order_by_x": [
-    0,
-    1,
-    4,
-    2,
-    3,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-    19,
-    20,
-    21,
-    22,
-    23,
-    24,
-    25,
-    26,
-    27,
-    28,
-    29,
-    30,
-    31
-  ],
-  "nearest_neighbour_arm_separation_um": 139.9999999999997,
-  "geometric_edges_equal_backend_edges": true,
-  "geometric_edges_not_in_backend": [],
-  "backend_edges_not_geometric": [],
-  "target_edge": [
-    1,
-    4
-  ],
-  "coupler": {
-    "id": "geom-C14",
-    "type": "capacitive",
-    "length_um": 200,
-    "gap_um_supplied": 18,
-    "gap_um_rendered": 18.000000000000014,
-    "touches_qubits": [
+  "versions": {
+    "python": "3.13.18",
+    "quantum_metal": "0.9.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "shapely": "2.2.0",
+    "gdstk": "1.0.2"
+  },
+  "scope": {
+    "qubits_built": [
+      0,
       1,
-      4
+      4,
+      2
     ],
-    "pad_owners": [
+    "reason": "local subsystem [1, 4] + chain neighbours"
+  },
+  "design_revision": "D21",
+  "consistency_checks": {
+    "note": "Ordering/adjacency checks are consistency checks of the supplied positions against the backend; with qubits on one line at equal pitch they reduce to sorting by x, and the coupler bridges Q1/Q4 by construction of our placement. They are not independent evidence of physical coupling.",
+    "geometry_ids_required_missing_from_design": [],
+    "physical_order_by_x_full_device": [
+      0,
+      1,
+      4,
+      2,
+      3,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+    ],
+    "x_order_chain_equals_backend_edges": true,
+    "coupler_pad_owners": [
       [
         1
       ],
@@ -99,12 +63,11 @@
         4
       ]
     ],
-    "bridges_exactly_target_edge": true,
-    "arm_tip_separation_um": 139.99999999999991
+    "coupler_gap_rendered_um": 18.000000000000014,
+    "coupler_pads_inside_etched_pocket": true,
+    "other_couplers_in_design": "none: local_region only specifies geom-C14; other 30 edges have no coupler geometry"
   },
-  "coupling_proxy_MHz_design21": 18.0,
-  "coupling_proxy_MHz_model20": 16.0,
-  "junction_check": {
+  "junctions": {
     "design21_Lj_nH": [
       10.0,
       10.0
@@ -118,8 +81,111 @@
       19.8
     ]
   },
-  "fingerprint_note": "design geometry_fingerprint is an opaque registry id (\"not a digest of this JSON\"); the reconstruction recipe digest below identifies this rebuild, it is not expected to equal it.",
-  "reconstruction_recipe_sha256": "071e8dadeb55a611b79514efa518f7627ff8cbc372fe257355486ba9103aa084",
+  "electrostatics": {
+    "method": "finite-difference Laplace on the Metal-rendered Q1/Q4 islands; zero-thickness metal at z=0; silicon eps_r=11.45 below, vacuum above; ground plane outside etched pockets and on the outer box; neighbours Q0/Q2 omitted (their pockets are not included, i.e. treated as ground)",
+    "runs": [
+      {
+        "grid_um": 10.0,
+        "nodes": 261625,
+        "cg_info": [
+          0,
+          0
+        ],
+        "Cc_fF": 0.6931914112732692,
+        "C1_total_fF": 77.88878362378276,
+        "C2_total_fF": 77.88878362378276,
+        "seconds": 1.8,
+        "EC_GHz": [
+          0.24869086951236669,
+          0.24869086951236669
+        ],
+        "f01_GHz_with_design_EJ": [
+          5.454037301008349,
+          5.454037301008349
+        ],
+        "g_exchange_MHz": 24.269809065734496
+      },
+      {
+        "grid_um": 6.0,
+        "nodes": 695604,
+        "cg_info": [
+          0,
+          0
+        ],
+        "Cc_fF": 0.9727747434157058,
+        "C1_total_fF": 95.5409174514815,
+        "C2_total_fF": 97.21746587620088,
+        "seconds": 7.3,
+        "EC_GHz": [
+          0.20274276028902374,
+          0.1992463920971325
+        ],
+        "f01_GHz_with_design_EJ": [
+          4.946287307027341,
+          4.905192198693378
+        ],
+        "g_exchange_MHz": 24.858969567676578
+      },
+      {
+        "grid_um": 5.0,
+        "nodes": 1013725,
+        "cg_info": [
+          0,
+          0
+        ],
+        "Cc_fF": 0.882944232179859,
+        "C1_total_fF": 91.67350466588425,
+        "C2_total_fF": 91.67350466588422,
+        "seconds": 16.1,
+        "EC_GHz": [
+          0.21129583073382419,
+          0.21129583073382424
+        ],
+        "f01_GHz_with_design_EJ": [
+          5.045222874727834,
+          5.045222874727834
+        ],
+        "g_exchange_MHz": 24.296280880382884
+      },
+      {
+        "grid_um": 4.0,
+        "nodes": 1577928,
+        "cg_info": [
+          0,
+          0
+        ],
+        "Cc_fF": 1.1837590165876062,
+        "C1_total_fF": 100.589831395672,
+        "C2_total_fF": 100.58983139567194,
+        "seconds": 36.0,
+        "EC_GHz": [
+          0.1925664757152834,
+          0.19256647571528349
+        ],
+        "f01_GHz_with_design_EJ": [
+          4.825577198770511,
+          4.825577198770512
+        ],
+        "g_exchange_MHz": 28.394125131866648
+      }
+    ],
+    "Cc_fF_range": [
+      0.6931914112732692,
+      1.1837590165876062
+    ],
+    "g_exchange_MHz_range": [
+      24.269809065734496,
+      28.394125131866648
+    ],
+    "Cc_needed_fF_for_proxy_given_model20_C_and_f01": {
+      "16.0MHz": 0.397013865997216,
+      "18.0MHz": 0.44664059924686805
+    },
+    "interpretation": "Order-of-magnitude only: thin-sheet edge singularities converge slowly and the grid cannot place all 20/18 um edges on nodes (non-monotone convergence); the coupler pad shape is our assumption; the supplied proxy \"includes drive scaling\". The estimate cannot discriminate 16 from 18 MHz (11%)."
+  },
+  "fingerprint_note": "design geometry_fingerprint is an opaque registry id (\"not a digest of this JSON\"); the digest below is of the exported rendered qgeometry table and identifies this rebuild only.",
+  "rendered_qgeometry_sha256": "9b56055ecd7902ff19b3626330b23fad9f8409cebb07984a43e09a296ae88edf",
   "design_geometry_fingerprint": "74a51d718cc33d6f422f4ffd3633011bf2890fb066bb200d4afa81e5f6f08c0e",
-  "em_extraction": "not performed: no Ansys/pyEPR or gmsh+Elmer renderer available; g not re-derived."
+  "gds_exported": true,
+  "runtime_s": 61.4
 }

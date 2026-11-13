@@ -1,4 +1,10 @@
 {
+  "versions": {
+    "python": "3.13.18",
+    "qutip": "5.3.1",
+    "qutip_qip": "0.4.2",
+    "numpy": "2.5.4"
+  },
   "inputs": {
     "pulse_duration_ns": 15.625,
     "target_angle_rad": 1.5707963267948966,
@@ -8,6 +14,7 @@
     "T2_us": 80,
     "tolerance": 0.004
   },
+  "scope_note": "H = omega ZZ/2 commutes with itself, so mesolve reproduces cos(n*omega*t), the same closed form characterization.json declares it was generated from. Agreement therefore validates the numbers and assumptions under the supplied reduced model; it is not an independent physical derivation of g.",
   "characterization": {
     "supplied_XI": [
       -0.194090322,
@@ -69,16 +76,273 @@
           0.978901,
           4.4e-05
         ],
-        "max_abs_residual": 0.0028839411945447146,
-        "max_shift_from_coherent": 0.0018836611945447501
+        "max_abs_residual": 0.002883941194357309,
+        "max_shift_from_coherent": 0.0018836611943573445
       }
     },
-    "qutip_minimax_fit_g_MHz": 17.99999999999987,
-    "qutip_minimax_fit_max_residual": 0.0010000041842315177,
-    "realized_angle_per_pulse_rad": 1.7671458676442457
+    "qutip_minimax_fit_g_MHz": 17.999999999999993,
+    "qutip_minimax_fit_max_residual": 0.0010000041837482376,
+    "fit_window_within_tolerance_MHz": [
+      17.9965,
+      18.0055
+    ],
+    "alias_branches_within_tolerance_MHz_0_to_3_periods": [
+      [
+        17.9965,
+        18.0055
+      ],
+      [
+        45.9945,
+        46.0035
+      ],
+      [
+        81.9965,
+        82.0055
+      ],
+      [
+        109.9945,
+        110.0035
+      ],
+      [
+        145.9965,
+        146.0055
+      ],
+      [
+        173.99450000000002,
+        174.0035
+      ]
+    ],
+    "alias_period_MHz": 64.0,
+    "branch_choice": "the branch nearest the supplied model/design proxies (16/18 MHz) is taken; the others (theta -> 2*pi - theta and +k*1000/t) fit equally well and are excluded only as physically implausible (2.5x or more the proxies).",
+    "realized_angle_per_pulse_rad": 1.767145867644258,
+    "realized_angle_window_rad": [
+      1.7668022559477723,
+      1.7676858288815944
+    ]
+  },
+  "compiled_block": {
+    "instructions": [
+      {
+        "index": 547,
+        "gate": "sx",
+        "local_targets": [
+          0
+        ],
+        "params": []
+      },
+      {
+        "index": 548,
+        "gate": "sx",
+        "local_targets": [
+          0
+        ],
+        "params": []
+      },
+      {
+        "index": 549,
+        "gate": "sx",
+        "local_targets": [
+          0
+        ],
+        "params": []
+      },
+      {
+        "index": 550,
+        "gate": "rz",
+        "local_targets": [
+          0
+        ],
+        "params": [
+          0.236
+        ]
+      },
+      {
+        "index": 551,
+        "gate": "sx",
+        "local_targets": [
+          0
+        ],
+        "params": []
+      },
+      {
+        "index": 689,
+        "gate": "sx",
+        "local_targets": [
+          1
+        ],
+        "params": []
+      },
+      {
+        "index": 690,
+        "gate": "sx",
+        "local_targets": [
+          1
+        ],
+        "params": []
+      },
+      {
+        "index": 691,
+        "gate": "sx",
+        "local_targets": [
+          1
+        ],
+        "params": []
+      },
+      {
+        "index": 692,
+        "gate": "rz",
+        "local_targets": [
+          1
+        ],
+        "params": [
+          0.245
+        ]
+      },
+      {
+        "index": 693,
+        "gate": "sx",
+        "local_targets": [
+          1
+        ],
+        "params": []
+      },
+      {
+        "index": 694,
+        "gate": "rzz",
+        "local_targets": [
+          0,
+          1
+        ],
+        "params": [
+          1.5707963267948966
+        ]
+      },
+      {
+        "index": 695,
+        "gate": "sx",
+        "local_targets": [
+          0
+        ],
+        "params": []
+      },
+      {
+        "index": 696,
+        "gate": "sx",
+        "local_targets": [
+          0
+        ],
+        "params": []
+      },
+      {
+        "index": 697,
+        "gate": "sx",
+        "local_targets": [
+          0
+        ],
+        "params": []
+      },
+      {
+        "index": 698,
+        "gate": "rz",
+        "local_targets": [
+          0
+        ],
+        "params": [
+          0.247
+        ]
+      },
+      {
+        "index": 699,
+        "gate": "sx",
+        "local_targets": [
+          0
+        ],
+        "params": []
+      },
+      {
+        "index": 716,
+        "gate": "sx",
+        "local_targets": [
+          1
+        ],
+        "params": []
+      },
+      {
+        "index": 717,
+        "gate": "sx",
+        "local_targets": [
+          1
+        ],
+        "params": []
+      },
+      {
+        "index": 718,
+        "gate": "sx",
+        "local_targets": [
+          1
+        ],
+        "params": []
+      },
+      {
+        "index": 719,
+        "gate": "rz",
+        "local_targets": [
+          1
+        ],
+        "params": [
+          0.256
+        ]
+      },
+      {
+        "index": 720,
+        "gate": "sx",
+        "local_targets": [
+          1
+        ],
+        "params": []
+      }
+    ],
+    "qutip_qip_gates": [
+      "SQRTNOT",
+      "SQRTNOT",
+      "SQRTNOT",
+      "RZ",
+      "SQRTNOT",
+      "SQRTNOT",
+      "SQRTNOT",
+      "SQRTNOT",
+      "RZ",
+      "SQRTNOT",
+      "RZZ",
+      "SQRTNOT",
+      "SQRTNOT",
+      "SQRTNOT",
+      "RZ",
+      "SQRTNOT",
+      "SQRTNOT",
+      "SQRTNOT",
+      "SQRTNOT",
+      "RZ",
+      "SQRTNOT"
+    ],
+    "process_fidelity_realized_vs_intended": 0.9903926396077966,
+    "process_fidelity_model20_pulse_vs_intended": 0.9999999994232265,
+    "analytic_cos2_half_overrotation": 0.9903926402016153,
+    "note": "Single-qubit gates on Q1/Q4 adjacent to the target, as compiled; target replaced by the integrated pulse propagator. With the model-20 rate the block equals the intended one; with the D21 rate it does not."
+  },
+  "sx_conjugation": {
+    "SXdag_RZZ_SX_eq_YY_rotation": true,
+    "SX_RZZ_SXdag_eq_YY_rotation": true,
+    "commutes_with_ZZ_parity": true,
+    "note": "Holds for either orientation, so it explains parity blindness but does not validate gate order."
   },
   "verification": {
-    "local_subsystem_qubits": [
+    "subsystem_incident": [
+      0,
+      1,
+      4
+    ],
+    "subsystem_with_non_incident_neighbour": [
       0,
       1,
       2,
@@ -86,18 +350,16 @@
     ],
     "observed": -0.19319937253274094,
     "tolerance": 0.004,
-    "qutip_X_model20_g16": -3.0166751041615925e-11,
-    "qutip_X_design21_g18": -0.19319937255149552,
-    "design21_within_tolerance": true
-  },
-  "sx_conjugation": {
-    "theta_rad": 1.7671458676442586,
-    "SXdag_RZZ_SX_equals_exp(-i theta YY/2)": true,
-    "block_ZZparity_commutes": true
+    "X_g16_incident": -2.9983265870114906e-11,
+    "X_g18_incident": -0.19319937255057598,
+    "X_g18_with_neighbour": -0.19319937255149552,
+    "neighbour_effect": 9.19542220145786e-13,
+    "g18_within_tolerance": true,
+    "g16_deviation_over_tolerance": 48.29984312568942
   },
   "repair": {
     "corrected_pulse_ns": 13.88888888888889,
-    "XI_corrected_duration": [
+    "XI_after_repair_at_g_fit": [
       -0.0,
       -1.0,
       -0.0,
@@ -107,27 +369,79 @@
       -0.0,
       1.0
     ],
-    "XI_corrected_amplitude": [
-      -0.0,
-      -1.0,
-      -0.0,
-      1.0,
-      0.0,
-      -1.0,
-      -0.0,
-      1.0
-    ],
-    "expected_cos_n_pi_over_2": [
-      0.0,
-      -1.0,
-      -0.0,
-      1.0,
-      0.0,
-      -1.0,
-      -0.0,
-      1.0
-    ],
-    "verification_X_after_repair": -3.0166751041615925e-11,
-    "max_deviation_from_intended": 0.0
+    "pass_criteria": {
+      "n=1": [
+        0.0,
+        0.004
+      ],
+      "n=2": [
+        -1.0,
+        0.004
+      ],
+      "n=3": [
+        -0.0,
+        0.004
+      ],
+      "n=4": [
+        1.0,
+        0.004
+      ],
+      "n=5": [
+        0.0,
+        0.004
+      ],
+      "n=6": [
+        -1.0,
+        0.004
+      ],
+      "n=7": [
+        -0.0,
+        0.004
+      ],
+      "n=8": [
+        1.0,
+        0.004
+      ]
+    },
+    "fault_signature_vs_repair": {
+      "n=1": {
+        "fault": -0.19509,
+        "repaired": 0.0
+      },
+      "n=2": {
+        "fault": -0.92388,
+        "repaired": -1.0
+      },
+      "n=3": {
+        "fault": 0.55557,
+        "repaired": -0.0
+      },
+      "n=4": {
+        "fault": 0.707107,
+        "repaired": 1.0
+      },
+      "n=5": {
+        "fault": -0.83147,
+        "repaired": 0.0
+      },
+      "n=6": {
+        "fault": -0.382683,
+        "repaired": -1.0
+      },
+      "n=7": {
+        "fault": 0.980785,
+        "repaired": -0.0
+      },
+      "n=8": {
+        "fault": 0.0,
+        "repaired": 1.0
+      }
+    },
+    "residual_angle_error_over_fit_window_rad": 0.00047996554429841076,
+    "worst_probe_deviation_over_fit_window": 0.003359752489277148,
+    "passes_within_tolerance_over_fit_window": true,
+    "amplitude_repair_note": "keeping 15.625 ns and scaling the drive by 0.8889 gives omega*t = pi/2 by the same algebra (it equals the g16 case), so it is not simulated separately.",
+    "verification_X_after_repair": -2.9983265870114906e-11,
+    "compiled_block_fidelity_after_repair": 0.9999999994232276
   }
 }

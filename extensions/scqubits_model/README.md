@@ -11,35 +11,35 @@ for bonus work. Submit this directory separately for organizer review.
 
 | File | Purpose |
 |---|---|
-| `reconstruct_model.py` | Source: scqubits reconstruction of model-20 and a D21 cross-check |
-| `results.json` | All numerical results, including a proposed D21-consistent model record |
+| `reconstruct_model.py` | Source: scqubits reconstruction of model-20, mechanism test, D21 cross-checks |
+| `results.json` | All results, with package versions and a proposed D21-consistent model record |
 
 ## Reproduction
 
-From the repository root, with `requirements-advanced.txt` installed (tested with scqubits 4.3.1, Python 3.13):
+From the repository root, with `requirements-advanced.txt` installed. Tested with Python 3.13.18,
+scqubits 4.3.1, numpy 2.5.4 and scipy 1.18.1; versions are written to `results.json`.
 
 ```sh
 python extensions/scqubits_model/reconstruct_model.py
 ```
 
-Runtime is about 2 s. Artifacts are only read.
+It takes about 3 s and is deterministic. If `extensions/device_reconstruction/results.json` exists (run B1
+first), its electrostatic EC range is added as a cross-check. Artifacts are only read.
 
 ## Assumptions
 
-1. **Transmons.** Two `scqubits.Transmon` objects are built from `device_model.json` `parameters`:
-   EJ = [20.1, 19.8] GHz, EC = [0.25, 0.26] GHz, ng = 0, ncut = 20, truncated_dim = 3.
-   Convergence: raising ncut to 40 changes f01 by 1×10⁻¹⁰ MHz.
+1. **Transmons.** Two `scqubits.Transmon` objects use the `device_model.json` parameters: EJ = [20.1, 19.8] GHz,
+   EC = [0.25, 0.26] GHz, ng = 0, ncut = 20, truncated_dim = 3.
 2. **Coupling.** The pair is coupled by a charge-charge term G·n₁n₂. G is chosen so that the bare exchange
-   strength G·|⟨0|n|1⟩₁|·|⟨0|n|1⟩₂| equals the supplied `coupling_proxy_MHz`.
-   - The coupled Hamiltonian is built in the scqubits eigenbasis, from scqubits eigenvalues and n matrix elements.
-   - scqubits' own `HilbertSpace` is not used: scqubits 4.3.1 rejects SciPy ≥ 1.15 sparse arrays in
-     `identity_wrap`, so the same construction is done explicitly.
-   - Results are checked with 3 and 6 levels per transmon.
-3. **Entangling rate.** The effective rate ω = 2π·g/1000 rad/ns is the **supplied** reduced assumption, and the
-   model says "Proxy g includes drive scaling". The driven entangling rate is therefore taken from that
-   assumption, not derived from the static Hamiltonian. The static ZZ below is reported for context only.
-4. **Physical constants.** EJ is converted from the D21 junction inductance with EJ = (Φ₀/2π)²/Lj (SI CODATA).
-   EC sets the total island capacitance, C = e²/(2h·EC).
+   strength G·|⟨0|n|1⟩|² equals the supplied `coupling_proxy_MHz`. The coupled spectrum comes from
+   `scqubits.HilbertSpace`, and is checked against an explicit construction in the eigenbasis with 3 and 6
+   levels per transmon.
+   - scqubits 4.3.1 cannot build a HilbertSpace under QuTiP 5, which returns SciPy sparse *arrays*.
+   - We apply Quantum Metal's shipped fix, `qiskit_metal.analyses.quantization._scqubits_compat.apply()`.
+3. **Entangling rate.** The rate ω = 2π·g/1000 rad/ns is the **supplied** reduced assumption, and the model
+   says "Proxy g includes drive scaling". Identifying the proxy with a static exchange coupling is our
+   modelling choice. The mechanism test below checks which rate law the characterization data supports.
+4. **Physical constants.** EJ = (Φ₀/2π)²/Lj and C = e²/(2h·EC), using SI CODATA constants.
 
 ## Results
 
@@ -50,60 +50,77 @@ Runtime is about 2 s. Artifacts are only read.
 | Q1 | 6.0793 | −277.3 | 1.2326 | 80.4 |
 | Q4 | 6.1456 | −289.4 | 1.2153 | 76.2 |
 
-Both are in the transmon regime (EJ/EC > 50), and the bare detuning is 66.3 MHz.
+- Raising ncut from 20 to 40 changes f01 by 1×10⁻¹⁰ MHz.
+- The bare detuning is 66.3 MHz.
 
 ### Coupled pair
 
-| coupling | dressed 01/10 splitting (MHz) | g recovered from splitting (MHz) | static ZZ (kHz) |
-|---|---:|---:|---:|
-| model-20, 16 MHz | 73.645 | 16.000 | 3561 |
-| design-21, 18 MHz (3 levels) | 75.469 | 18.000 | 4492 |
-| design-21, 18 MHz (6 levels) | 75.469 | 18.000 | 4490 |
+| proxy g | HilbertSpace 01/10 splitting (MHz) | static ZZ: HilbertSpace / explicit 3-level / explicit 6-level (MHz) | 2nd-order perturbative ZZ (MHz) | g/Δ |
+|---|---:|---:|---:|---:|
+| 16 MHz (model-20) | 73.645 | 3.5613 / 3.5613 / 3.5603 | 3.87 | 0.24 |
+| 18 MHz (design-21) | 75.469 | 4.4916 / 4.4916 / 4.4902 | 4.89 | 0.27 |
 
-The exchange strength recovered from the dressed spectrum matches the proxy it was set to. This confirms the
-scqubits charge-basis model and the proxy definition agree; it is not an independent extraction of g.
+- `HilbertSpace` and the explicit construction agree to 10⁻⁴ MHz.
+- The dressed 01, 10 and 11 states each overlap their bare state by at least 0.94, so labelling them is unambiguous.
+- The splitting matches √(Δ² + 4g²) **by construction**: G was set from the proxy. This is a consistency check,
+  not an extraction of g.
+- The static ZZ is **several MHz** because g/Δ ≈ 0.25 is large for a fixed coupling. Perturbation theory
+  overestimates it by about 9% at this ratio.
+  - This always-on ZZ is outside the supplied reduced model, which describes only the driven entangling pulse.
+  - It is reported, not used.
+
+### Mechanism test: which rate law matches `characterization.json`?
+
+| hypothesis for the 15.625 ns pulse at g = 18 MHz | angle per pulse (rad) | max residual over 8 probes (tolerance 0.004) |
+|---|---:|---:|
+| supplied linear proxy ω = 2π·g/1000 | 1.7671 (9π/16) | **0.0010 ✓** |
+| rate ∝ g² (static-ZZ-like scaling from the 16 MHz calibration) | 1.9880 | 1.187 ✗ (⟨XI⟩ at n=1 would be −0.405 against the observed −0.194) |
+| bare static ZZ alone (4.49 MHz) | 0.2205 | 1.829 ✗ |
+
+A sweep of g from 14 to 20 MHz in 0.5 MHz steps fits within tolerance **only at 18.0 MHz** (residual 0.001). The
+nearest other steps, 17.5 and 18.5 MHz, have residuals of 0.38. The data therefore support the supplied linear
+proxy with g = 18 MHz, and rule out the 16 MHz value used by the calibration.
 
 ### Reduced-rate consequence
 
 | | ω (rad/ns) | angle for a 15.625 ns pulse |
 |---|---:|---:|
-| model-20, 16 MHz (`cal-21` nominal_rate = 0.100531, matches exactly) | 0.100531 | π/2 (intended) |
-| design-21, 18 MHz (D21 device) | 0.113097 | **1.767146 rad = 9π/16** |
+| model-20, 16 MHz (`cal-21` nominal_rate 0.100531, matches exactly) | 0.100531 | π/2 (intended) |
+| design-21, 18 MHz | 0.113097 | **1.767146 rad = 9π/16** |
 
-### New provenance finding: model-20 junction energies are not D21's
+### Design cross-checks
 
 | | Q1 | Q4 |
 |---|---:|---:|
 | `design-21` Lj (nH) | 10.0 | 10.0 |
-| EJ implied by D21 Lj (GHz) | **16.35** | **16.35** |
+| EJ implied by D21 Lj (GHz) | 16.35 | 16.35 |
 | `model-20` EJ (GHz) | 20.1 | 19.8 |
 | Lj implied by model-20 EJ (nH) | 8.13 | 8.26 |
-| f01 if EJ were taken from D21 Lj, EC unchanged (GHz) | 5.455 | 5.558 |
+| model-20 EC → total C (fF) | 77.5 | 74.5 |
+| B1 electrostatic EC (GHz), if B1 has run | 0.19–0.25 | 0.19–0.25 |
 
-The coupling proxy is not the only thing that differs. The model-20 junction energies are also inconsistent
-with the D21 junction metadata: D21 specifies identical 10 nH junctions, while model-20 has asymmetric EJ that
-implies about 8.1–8.3 nH. This independently supports the conclusion that model-20 was not derived from the D21
-geometry, matching its D20 `source_geometry_fingerprint`.
-
-Caveats:
-- The D20 geometry is not supplied, so we cannot confirm model-20 matches D20 junctions.
-- The EC values imply total island capacitances of 77.5 / 74.5 fF. Only the junction Cj (2 fF) is supplied,
-  not the cross/gap capacitance, so EC is not cross-checked.
+- **EC is consistent:** the B1 electrostatic range overlaps model-20's 0.25 / 0.26 GHz.
+- **EJ is not consistent:** model-20's junction energies don't match the D21 Lj.
+- This is *consistent with* model-20 not being derived from D21, but it is not proof:
+  - model-20 calls itself "not a claimed ab initio transmon extraction";
+  - the D20 geometry is not supplied;
+  - no frequency data exist to test either EJ.
 
 ### Proposed replacement record
 
-`results.json` → `proposed_model_record` is a model-21 candidate.
-- **Changed:** `source_geometry_fingerprint` is set to the D21 fingerprint and `coupling_proxy_MHz` to 18.0.
-- **Kept, flagged:** EJ/EC are retained from model-20 until a D21 EM capacitance extraction and junction
-  characterization exist. Only the coupling enters the reduced entangling rate, so this minimal update is
-  enough to correct the calibration.
+`results.json` → `proposed_model_record` (model-21 candidate):
+- **Changed:** `source_geometry_fingerprint` is set to D21 and `coupling_proxy_MHz` to 18.0.
+- **Kept, flagged:** EJ/EC are retained from model-20 pending D21 junction characterization and an EM extraction.
+- **Left blank:** `created_at` is null until the record is registered.
+
+Only the coupling enters the reduced rate, so this minimal update is enough to correct the calibration.
 
 ## Comparison with the supplied evidence
 
 | Supplied evidence | Agreement |
 |---|---|
-| `device_model.json` (model-20) parameters | Reconstructed; well-formed converged transmons, 66 MHz detuned |
+| `device_model.json` (model-20) | Reconstructed; converged transmons, 66 MHz detuned |
 | `control_calibration.json` nominal_rate 0.100531 rad/ns | Equals ω(16 MHz) from model-20 exactly |
-| `device_design.json` coupling_proxy_MHz 18 | Gives ω = 0.113097 rad/ns and a 9π/16 realized angle, matching `characterization.json` (see B3) |
-| `device_design.json` Lj = 10 nH | Inconsistent with model-20 EJ (16.35 vs 20.1/19.8 GHz): more evidence model-20 is not D21-derived |
-| `provenance_registry.json` (model-20 → D20 fingerprint) | Consistent with the junction mismatch above |
+| `characterization.json` | Fits only the linear proxy at g = 18 MHz (the `design-21` value); rejects 16 MHz, g² scaling and static ZZ |
+| `device_design.json` Lj = 10 nH | Inconsistent with model-20 EJ (16.35 vs 20.1 / 19.8 GHz); consistent with, not proof of, non-D21 provenance |
+| B1 electrostatics | Consistent with model-20 EC |
