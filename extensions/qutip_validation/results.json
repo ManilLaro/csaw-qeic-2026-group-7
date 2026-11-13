@@ -1,0 +1,133 @@
+{
+  "inputs": {
+    "pulse_duration_ns": 15.625,
+    "target_angle_rad": 1.5707963267948966,
+    "g_model20_MHz": 16.0,
+    "g_design21_MHz": 18.0,
+    "T1_us": 100,
+    "T2_us": 80,
+    "tolerance": 0.004
+  },
+  "characterization": {
+    "supplied_XI": [
+      -0.194090322,
+      -0.924879533,
+      0.556570233,
+      0.706106781,
+      -0.830469612,
+      -0.383683432,
+      0.98178528,
+      -0.001
+    ],
+    "repetitions": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "simulations": {
+      "model20_g16": {
+        "XI": [
+          -0.0,
+          -1.0,
+          -0.0,
+          1.0,
+          0.0,
+          -1.0,
+          -0.0,
+          1.0
+        ],
+        "max_abs_residual": 1.001000010055363,
+        "within_tolerance": false
+      },
+      "design21_g18": {
+        "XI": [
+          -0.19509,
+          -0.92388,
+          0.55557,
+          0.707107,
+          -0.83147,
+          -0.382683,
+          0.980785,
+          0.0
+        ],
+        "max_abs_residual": 0.0010000041838080787,
+        "within_tolerance": true
+      },
+      "design21_g18_with_T1T2": {
+        "XI": [
+          -0.194994,
+          -0.923391,
+          0.555078,
+          0.706365,
+          -0.830309,
+          -0.382097,
+          0.978901,
+          4.4e-05
+        ],
+        "max_abs_residual": 0.0028839411945447146,
+        "max_shift_from_coherent": 0.0018836611945447501
+      }
+    },
+    "qutip_minimax_fit_g_MHz": 17.99999999999987,
+    "qutip_minimax_fit_max_residual": 0.0010000041842315177,
+    "realized_angle_per_pulse_rad": 1.7671458676442457
+  },
+  "verification": {
+    "local_subsystem_qubits": [
+      0,
+      1,
+      2,
+      4
+    ],
+    "observed": -0.19319937253274094,
+    "tolerance": 0.004,
+    "qutip_X_model20_g16": -3.0166751041615925e-11,
+    "qutip_X_design21_g18": -0.19319937255149552,
+    "design21_within_tolerance": true
+  },
+  "sx_conjugation": {
+    "theta_rad": 1.7671458676442586,
+    "SXdag_RZZ_SX_equals_exp(-i theta YY/2)": true,
+    "block_ZZparity_commutes": true
+  },
+  "repair": {
+    "corrected_pulse_ns": 13.88888888888889,
+    "XI_corrected_duration": [
+      -0.0,
+      -1.0,
+      -0.0,
+      1.0,
+      0.0,
+      -1.0,
+      -0.0,
+      1.0
+    ],
+    "XI_corrected_amplitude": [
+      -0.0,
+      -1.0,
+      -0.0,
+      1.0,
+      0.0,
+      -1.0,
+      -0.0,
+      1.0
+    ],
+    "expected_cos_n_pi_over_2": [
+      0.0,
+      -1.0,
+      -0.0,
+      1.0,
+      0.0,
+      -1.0,
+      -0.0,
+      1.0
+    ],
+    "verification_X_after_repair": -3.0166751041615925e-11,
+    "max_deviation_from_intended": 0.0
+  }
+}
